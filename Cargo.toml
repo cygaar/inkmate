@@ -1,12 +1,12 @@
 [package]
-name = "erc20"
+name = "stylusmate"
 version = "0.1.5"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 homepage = "https://github.com/OffchainLabs/stylus-hello-world"
 repository = "https://github.com/OffchainLabs/stylus-hello-world"
 keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
-description = "ERC20 contract written in Rust"
+description = "Building block smart contracts written in Rust for Stylus"
 
 [dependencies]
 alloy-primitives = "0.3.1"
