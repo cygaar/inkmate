@@ -1,5 +1,5 @@
 [package]
-name = "stylusmate"
+name = "inkmate"
 version = "0.1.5"
 edition = "2021"
 license = "MIT OR Apache-2.0"
