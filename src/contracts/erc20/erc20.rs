@@ -7,22 +7,22 @@ use stylus_sdk::{
     prelude::*,
 };
 
-pub trait Erc20Params {
+pub trait ERC20Params {
     const NAME: &'static str;
     const SYMBOL: &'static str;
     const DECIMALS: u8;
 }
 
 sol_storage! {
-    /// Erc20 implements all ERC-20 methods.
-    pub struct Erc20<T> {
+    /// ERC20 implements all ERC-20 methods.
+    pub struct ERC20<T> {
         /// Maps users to balances
         mapping(address => uint256) balances;
         /// Maps users to a mapping of each spender's allowance
         mapping(address => mapping(address => uint256)) allowances;
         /// The total supply of the token
         uint256 total_supply;
-        /// Used to allow [`Erc20Params`]
+        /// Used to allow [`ERC20Params`]
         PhantomData<T> phantom;
     }
 }
@@ -37,23 +37,18 @@ sol! {
 }
 
 #[derive(SolidityError)]
-pub enum Erc20Error {
+pub enum ERC20Error {
     InsufficientBalance(InsufficientBalance),
     InsufficientAllowance(InsufficientAllowance),
 }
 
 // Internal functions
-impl<T: Erc20Params> Erc20<T> {
-    pub fn transfer_impl(
-        &mut self,
-        from: Address,
-        to: Address,
-        value: U256,
-    ) -> Result<(), Erc20Error> {
+impl<T: ERC20Params> ERC20<T> {
+    pub fn _transfer(&mut self, from: Address, to: Address, value: U256) -> Result<(), ERC20Error> {
         let mut sender_balance = self.balances.setter(from);
         let old_sender_balance = sender_balance.get();
         if old_sender_balance < value {
-            return Err(Erc20Error::InsufficientBalance(InsufficientBalance {
+            return Err(ERC20Error::InsufficientBalance(InsufficientBalance {
                 from,
                 have: old_sender_balance,
                 want: value,
@@ -67,7 +62,7 @@ impl<T: Erc20Params> Erc20<T> {
         Ok(())
     }
 
-    pub fn mint(&mut self, address: Address, value: U256) {
+    pub fn _mint(&mut self, address: Address, value: U256) {
         let mut balance = self.balances.setter(address);
         let new_balance = balance.get() + value;
         balance.set(new_balance);
@@ -79,11 +74,11 @@ impl<T: Erc20Params> Erc20<T> {
         });
     }
 
-    pub fn burn(&mut self, address: Address, value: U256) -> Result<(), Erc20Error> {
+    pub fn _burn(&mut self, address: Address, value: U256) -> Result<(), ERC20Error> {
         let mut balance = self.balances.setter(address);
         let old_balance = balance.get();
         if old_balance < value {
-            return Err(Erc20Error::InsufficientBalance(InsufficientBalance {
+            return Err(ERC20Error::InsufficientBalance(InsufficientBalance {
                 from: address,
                 have: old_balance,
                 want: value,
@@ -102,7 +97,7 @@ impl<T: Erc20Params> Erc20<T> {
 
 // These methods are external to other contracts
 #[external]
-impl<T: Erc20Params> Erc20<T> {
+impl<T: ERC20Params> ERC20<T> {
     pub fn name() -> String {
         T::NAME.into()
     }
@@ -127,8 +122,8 @@ impl<T: Erc20Params> Erc20<T> {
         self.allowances.getter(owner).get(spender)
     }
 
-    pub fn transfer(&mut self, to: Address, value: U256) -> Result<bool, Erc20Error> {
-        self.transfer_impl(msg::sender(), to, value)?;
+    pub fn transfer(&mut self, to: Address, value: U256) -> Result<bool, ERC20Error> {
+        self._transfer(msg::sender(), to, value)?;
         Ok(true)
     }
 
@@ -147,12 +142,12 @@ impl<T: Erc20Params> Erc20<T> {
         from: Address,
         to: Address,
         value: U256,
-    ) -> Result<bool, Erc20Error> {
+    ) -> Result<bool, ERC20Error> {
         let mut sender_allowances = self.allowances.setter(from);
         let mut allowance = sender_allowances.setter(msg::sender());
         let old_allowance = allowance.get();
         if old_allowance < value {
-            return Err(Erc20Error::InsufficientAllowance(InsufficientAllowance {
+            return Err(ERC20Error::InsufficientAllowance(InsufficientAllowance {
                 owner: from,
                 spender: msg::sender(),
                 have: old_allowance,
@@ -160,7 +155,7 @@ impl<T: Erc20Params> Erc20<T> {
             }));
         }
         allowance.set(old_allowance - value);
-        self.transfer_impl(from, to, value)?;
+        self._transfer(from, to, value)?;
         Ok(true)
     }
 }
