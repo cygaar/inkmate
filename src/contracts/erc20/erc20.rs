@@ -1,8 +1,12 @@
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use core::marker::PhantomData;
+
 use stylus_sdk::{
-    alloy_primitives::{Address, U256},
-    alloy_sol_types::sol,
+    abi,
+    alloy_primitives::{Address, B256, U256},
+    alloy_sol_types::{sol, SolType},
+    block,
+    crypto::keccak,
     evm, msg,
     prelude::*,
 };
@@ -13,6 +17,9 @@ pub trait ERC20Params {
     const DECIMALS: u8;
 }
 
+type SolStructHash = sol! { tuple(bytes32, address, address, uint256, uint256, uint256) };
+type SolSignedHash = sol! { tuple(string, bytes32, bytes32) };
+
 sol_storage! {
     /// ERC20 implements all ERC-20 methods.
     pub struct ERC20<T> {
@@ -22,6 +29,8 @@ sol_storage! {
         mapping(address => mapping(address => uint256)) allowances;
         /// The total supply of the token
         uint256 total_supply;
+        /// Nonces used for EIP2612
+        mapping(address => uint256) nonces;
         /// Used to allow [`ERC20Params`]
         PhantomData<T> phantom;
     }
@@ -34,12 +43,14 @@ sol! {
 
     error InsufficientBalance(address from, uint256 have, uint256 want);
     error InsufficientAllowance(address owner, address spender, uint256 have, uint256 want);
+    error PermitExpired();
 }
 
 #[derive(SolidityError)]
 pub enum ERC20Error {
     InsufficientBalance(InsufficientBalance),
     InsufficientAllowance(InsufficientAllowance),
+    PermitExpired(PermitExpired),
 }
 
 // Internal functions
@@ -92,6 +103,10 @@ impl<T: ERC20Params> ERC20<T> {
             value,
         });
         Ok(())
+    }
+
+    pub fn _domain_separator(&mut self) -> B256 {
+
     }
 }
 
@@ -157,5 +172,49 @@ impl<T: ERC20Params> ERC20<T> {
         allowance.set(old_allowance - value);
         self._transfer(from, to, value)?;
         Ok(true)
+    }
+
+    pub fn DOMAIN_SEPARATOR( &mut self) -> Result<B256, ERC20Error> {
+        Ok(self._domain_separator())
+    }
+
+    pub fn permit(
+        &mut self,
+        owner: Address,
+        spender: Address,
+        value: U256,
+        deadline: U256,
+        v: u8,
+        r: B256,
+        s: B256,
+    ) -> Result<(), ERC20Error> {
+        if U256::from(block::timestamp()) > deadline {
+            return Err(ERC20Error::PermitExpired(PermitExpired {}));
+        }
+
+        let nonce = self.nonces.get(owner);
+        self.nonces.setter(owner).set(nonce + U256::from(1));
+
+        let domain_separator = self._domain_separator().as_slice().try_into().expect("Should be 32 bytes");
+
+        let permit_typehash = keccak(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
+        );
+        let permit_typehash_array = permit_typehash
+            .as_slice()
+            .try_into()
+            .expect("Slice must be exactly 32 bytes");
+        let struct_hash = SolStructHash::encode(&(
+            permit_typehash_array,
+            owner,
+            spender,
+            value,
+            nonce,
+            deadline,
+        ));
+        let struct_hash_array = struct_hash.as_slice().try_into().expect("Slice must be exactly 32 bytes");
+        let signed_hash = SolSignedHash::encode(&("\x19\x01".to_string(), domain_separator, struct_hash_array));
+
+        Ok(())
     }
 }
