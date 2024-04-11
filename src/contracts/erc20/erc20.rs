@@ -5,7 +5,7 @@ use stylus_sdk::{
     abi,
     alloy_primitives::{Address, B256, U256},
     alloy_sol_types::{sol, SolType},
-    block,
+    block, contract,
     crypto::keccak,
     evm, msg,
     prelude::*,
@@ -18,6 +18,7 @@ pub trait ERC20Params {
 }
 
 type SolStructHash = sol! { tuple(bytes32, address, address, uint256, uint256, uint256) };
+type SolDomainHash = sol! { tuple(bytes32, bytes32, bytes32, uint256, address) };
 type SolSignedHash = sol! { tuple(string, bytes32, bytes32) };
 
 sol_storage! {
@@ -51,6 +52,13 @@ pub enum ERC20Error {
     InsufficientBalance(InsufficientBalance),
     InsufficientAllowance(InsufficientAllowance),
     PermitExpired(PermitExpired),
+}
+
+pub fn _bytes32_to_array(bytes_value: B256) -> [u8; 32] {
+    bytes_value
+        .as_slice()
+        .try_into()
+        .expect("Slice must be exactly 32 bytes")
 }
 
 // Internal functions
@@ -106,7 +114,19 @@ impl<T: ERC20Params> ERC20<T> {
     }
 
     pub fn _domain_separator(&mut self) -> B256 {
+        let eip712_domain_hash = keccak(
+            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+        );
+        let name_hash = keccak(T::NAME.as_bytes());
+        let version_hash = keccak("1");
 
+        keccak(SolDomainHash::encode(&(
+            _bytes32_to_array(eip712_domain_hash),
+            _bytes32_to_array(name_hash),
+            _bytes32_to_array(version_hash),
+            U256::from(block::chainid()),
+            contract::address(),
+        )))
     }
 }
 
@@ -174,7 +194,7 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(true)
     }
 
-    pub fn DOMAIN_SEPARATOR( &mut self) -> Result<B256, ERC20Error> {
+    pub fn DOMAIN_SEPARATOR(&mut self) -> Result<B256, ERC20Error> {
         Ok(self._domain_separator())
     }
 
@@ -195,25 +215,25 @@ impl<T: ERC20Params> ERC20<T> {
         let nonce = self.nonces.get(owner);
         self.nonces.setter(owner).set(nonce + U256::from(1));
 
-        let domain_separator = self._domain_separator().as_slice().try_into().expect("Should be 32 bytes");
+        let domain_separator = _bytes32_to_array(self._domain_separator());
 
         let permit_typehash = keccak(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
         );
-        let permit_typehash_array = permit_typehash
-            .as_slice()
-            .try_into()
-            .expect("Slice must be exactly 32 bytes");
         let struct_hash = SolStructHash::encode(&(
-            permit_typehash_array,
+            _bytes32_to_array(permit_typehash),
             owner,
             spender,
             value,
             nonce,
             deadline,
         ));
-        let struct_hash_array = struct_hash.as_slice().try_into().expect("Slice must be exactly 32 bytes");
-        let signed_hash = SolSignedHash::encode(&("\x19\x01".to_string(), domain_separator, struct_hash_array));
+        let struct_hash_array = struct_hash
+            .as_slice()
+            .try_into()
+            .expect("Slice must be exactly 32 bytes");
+        let signed_hash =
+            SolSignedHash::encode(&("\x19\x01".to_string(), domain_separator, struct_hash_array));
 
         Ok(())
     }
