@@ -56,7 +56,7 @@ pub enum ERC20Error {
     InvalidPermit(InvalidPermit),
 }
 
-pub fn _bytes32_to_array(bytes_value: B256) -> [u8; 32] {
+pub fn bytes32_to_array(bytes_value: B256) -> [u8; 32] {
     bytes_value
         .as_slice()
         .try_into()
@@ -123,9 +123,9 @@ impl<T: ERC20Params> ERC20<T> {
         let version_hash = keccak("1");
 
         keccak(SolDomainHash::encode(&(
-            _bytes32_to_array(eip712_domain_hash),
-            _bytes32_to_array(name_hash),
-            _bytes32_to_array(version_hash),
+            bytes32_to_array(eip712_domain_hash),
+            bytes32_to_array(name_hash),
+            bytes32_to_array(version_hash),
             U256::from(block::chainid()),
             contract::address(),
         )))
@@ -217,13 +217,13 @@ impl<T: ERC20Params> ERC20<T> {
         let nonce = self.nonces.get(owner);
         self.nonces.setter(owner).set(nonce + U256::from(1));
 
-        let domain_separator = _bytes32_to_array(self._domain_separator());
+        let domain_separator = bytes32_to_array(self._domain_separator());
 
         let permit_typehash = keccak(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
         );
         let struct_hash = SolStructHash::encode(&(
-            _bytes32_to_array(permit_typehash),
+            bytes32_to_array(permit_typehash),
             owner,
             spender,
             value,
@@ -242,10 +242,10 @@ impl<T: ERC20Params> ERC20<T> {
 
         let recovered_address = Address::from_slice(
             &ec_recover(
-                &_bytes32_to_array(signed_hash),
+                &bytes32_to_array(signed_hash),
                 v,
-                &_bytes32_to_array(r),
-                &_bytes32_to_array(s),
+                &bytes32_to_array(r),
+                &bytes32_to_array(s),
             )
             .map_err(|_| ERC20Error::InvalidPermit(InvalidPermit {}))?,
         );
