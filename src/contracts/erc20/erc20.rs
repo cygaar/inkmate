@@ -1,8 +1,8 @@
+use crate::contracts::utils::ecrecover::ec_recover;
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
 
 use stylus_sdk::{
-    abi,
     alloy_primitives::{Address, B256, U256},
     alloy_sol_types::{sol, SolType},
     block, contract,
@@ -45,6 +45,7 @@ sol! {
     error InsufficientBalance(address from, uint256 have, uint256 want);
     error InsufficientAllowance(address owner, address spender, uint256 have, uint256 want);
     error PermitExpired();
+    error InvalidPermit();
 }
 
 #[derive(SolidityError)]
@@ -52,6 +53,7 @@ pub enum ERC20Error {
     InsufficientBalance(InsufficientBalance),
     InsufficientAllowance(InsufficientAllowance),
     PermitExpired(PermitExpired),
+    InvalidPermit(InvalidPermit),
 }
 
 pub fn _bytes32_to_array(bytes_value: B256) -> [u8; 32] {
@@ -232,8 +234,30 @@ impl<T: ERC20Params> ERC20<T> {
             .as_slice()
             .try_into()
             .expect("Slice must be exactly 32 bytes");
-        let signed_hash =
-            SolSignedHash::encode(&("\x19\x01".to_string(), domain_separator, struct_hash_array));
+        let signed_hash = keccak(SolSignedHash::encode(&(
+            "\x19\x01".to_string(),
+            domain_separator,
+            struct_hash_array,
+        )));
+
+        let recovered_address = Address::from_slice(
+            &ec_recover(
+                &_bytes32_to_array(signed_hash),
+                v,
+                &_bytes32_to_array(r),
+                &_bytes32_to_array(s),
+            )
+            .map_err(|_| ERC20Error::InvalidPermit(InvalidPermit {}))?,
+        );
+
+        if recovered_address == Address::ZERO || recovered_address != owner {
+            return Err(ERC20Error::InvalidPermit(InvalidPermit {}));
+        }
+
+        self.allowances
+            .setter(recovered_address)
+            .setter(spender)
+            .set(value);
 
         Ok(())
     }
