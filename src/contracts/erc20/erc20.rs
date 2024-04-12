@@ -196,6 +196,7 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(true)
     }
 
+    #[allow(non_snake_case)]
     pub fn DOMAIN_SEPARATOR(&mut self) -> Result<B256, ERC20Error> {
         Ok(self._domain_separator())
     }
