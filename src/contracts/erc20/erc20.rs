@@ -1,4 +1,4 @@
-use crate::contracts::utils::ecrecover::ec_recover;
+use crate::contracts::utils::ecrecover::{EcRecoverTrait, PrecompileEcRecover};
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
 
@@ -242,7 +242,7 @@ impl<T: ERC20Params> ERC20<T> {
         )));
 
         let recovered_address = Address::from_slice(
-            &ec_recover(
+            &PrecompileEcRecover::ec_recover(
                 &bytes32_to_array(signed_hash),
                 v,
                 &bytes32_to_array(r),
