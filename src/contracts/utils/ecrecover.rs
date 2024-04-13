@@ -1,4 +1,7 @@
-use stylus_sdk::{alloy_primitives::Address, call::RawCall};
+use stylus_sdk::{
+    alloy_primitives::{Address, B256, B512},
+    call::RawCall,
+};
 
 /// The number of bytes in a hash digest used by the transcript
 pub const HASH_OUTPUT_SIZE: usize = 32;
@@ -52,13 +55,17 @@ pub trait EcRecoverTrait {
         PrecompileEcRecover::ecrecover_implementation(input)
     }
 
-    fn ecrecover_implementation(input: [u8; 128]) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError>;
+    fn ecrecover_implementation(
+        input: [u8; EC_RECOVER_INPUT_LEN],
+    ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError>;
 }
 
 pub struct PrecompileEcRecover;
 
 impl EcRecoverTrait for PrecompileEcRecover {
-    fn ecrecover_implementation(input: [u8; 128]) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
+    fn ecrecover_implementation(
+        input: [u8; EC_RECOVER_INPUT_LEN],
+    ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
         let res = RawCall::new_static()
             // Only get the last 20 bytes of the 32-byte return data
             .limit_return_data(NUM_BYTES_U256 - NUM_BYTES_ADDRESS, NUM_BYTES_ADDRESS)
@@ -75,6 +82,57 @@ impl EcRecoverTrait for PrecompileEcRecover {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
+    use stylus_sdk::crypto::keccak;
+
+    // TODO: need to verify it slices the last 20 bytes
+    pub fn address_to_array(address_value: B256) -> [u8; 20] {
+        address_value
+            .as_slice()
+            .try_into()
+            .expect("Slice must be exactly 20 bytes")
+    }
+
+    struct RustEcRecover;
+
+    impl EcRecoverTrait for RustEcRecover {
+        fn ecrecover_implementation(
+            input: [u8; EC_RECOVER_INPUT_LEN],
+        ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
+            // `v` must be a 32-byte big-endian integer equal to 27 or 28.
+            if !(input[32..63].iter().all(|&b| b == 0) && matches!(input[63], 27 | 28)) {
+                return Ok([0; 20]);
+            }
+
+            let msg = <&B256>::try_from(&input[0..32]).unwrap();
+            let mut recid = input[63] - 27;
+            let sig = <&B512>::try_from(&input[64..128]).unwrap();
+
+            // parse signature
+            let mut sig = Signature::from_slice(sig.as_slice()).map_err(|_| EcdsaError)?;
+
+            // normalize signature and flip recovery id if needed.
+            if let Some(sig_normalized) = sig.normalize_s() {
+                sig = sig_normalized;
+                recid ^= 1;
+            }
+            let recid = RecoveryId::from_byte(recid).expect("recovery ID is valid");
+
+            // recover key
+            let recovered_key = VerifyingKey::recover_from_prehash(&msg[..], &sig, recid)
+                .map_err(|_| EcdsaError)?;
+            // hash it
+            let mut hash = keccak(
+                &recovered_key
+                    .to_encoded_point(/* compress = */ false)
+                    .as_bytes()[1..],
+            );
+
+            // truncate to 20 bytes
+            hash[..12].fill(0);
+            Ok(address_to_array(hash))
+        }
+    }
 
     #[test]
     fn test_ec_recover_with_known_good() {

@@ -21,6 +21,9 @@ ethers = "2.0"
 eyre = "0.6.8"
 mockall = "0.10.2"
 
+# ecRecover precompile
+k256 = { version = "0.13.3", default-features = false, features = ["ecdsa"] }
+
 [features]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]

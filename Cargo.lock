@@ -1609,6 +1609,7 @@ dependencies = [
  "ethers",
  "eyre",
  "hex",
+ "k256",
  "mini-alloc",
  "mockall",
  "stylus-sdk",
