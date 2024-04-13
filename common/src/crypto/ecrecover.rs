@@ -122,10 +122,12 @@ mod tests {
         let mut rec_id = rec_id.to_i32() as u8;
         rec_id += 27;
 
-        let mut r = [0u8; 32];
-        r.copy_from_slice(&sig_bytes[0..32]);
-        let mut s = [0u8; 32];
-        s.copy_from_slice(&sig_bytes[32..64]);
+        let r: [u8; 32] = sig_bytes[0..32]
+            .try_into()
+            .expect("Slice with incorrect length");
+        let s: [u8; 32] = sig_bytes[32..64]
+            .try_into()
+            .expect("Slice with incorrect length");
 
         let result =
             RustEcRecover::ec_recover(&hash, rec_id, &r, &s).expect("Recovery should succeed");
