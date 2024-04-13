@@ -48,8 +48,7 @@ pub trait EcRecoverTrait {
         // Add `s` to input
         input[3 * NUM_BYTES_U256..].copy_from_slice(s);
 
-        // Call the `ecRecover` precompile. In the future this can be subbed out with a native implementation
-        PrecompileEcRecover::ecrecover_implementation(input)
+        Self::ecrecover_implementation(input)
     }
 
     fn ecrecover_implementation(
@@ -93,7 +92,7 @@ mod tests {
         ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
             // `v` must be a 32-byte big-endian integer equal to 27 or 28.
             if !(input[32..63].iter().all(|&b| b == 0) && matches!(input[63], 27 | 28)) {
-                return Ok([0; 20]);
+                return Ok([0; NUM_BYTES_ADDRESS]);
             }
 
             let msg = <&B256>::try_from(&input[0..32]).unwrap();
