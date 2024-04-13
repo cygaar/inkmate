@@ -1,7 +1,4 @@
-use stylus_sdk::{
-    alloy_primitives::{Address, B256, B512},
-    call::RawCall,
-};
+use stylus_sdk::{alloy_primitives::Address, call::RawCall};
 
 /// The number of bytes in a hash digest used by the transcript
 pub const HASH_OUTPUT_SIZE: usize = 32;
@@ -83,15 +80,10 @@ impl EcRecoverTrait for PrecompileEcRecover {
 mod tests {
     use super::*;
     use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-    use stylus_sdk::crypto::keccak;
-
-    // TODO: need to verify it slices the last 20 bytes
-    pub fn address_to_array(address_value: B256) -> [u8; 20] {
-        address_value
-            .as_slice()
-            .try_into()
-            .expect("Slice must be exactly 20 bytes")
-    }
+    use stylus_sdk::{
+        alloy_primitives::{B256, B512},
+        crypto::keccak,
+    };
 
     struct RustEcRecover;
 
@@ -130,7 +122,11 @@ mod tests {
 
             // truncate to 20 bytes
             hash[..12].fill(0);
-            Ok(address_to_array(hash))
+
+            let result: [u8; NUM_BYTES_ADDRESS] = (&hash.as_slice()[12..32])
+                .try_into()
+                .map_err(|_| EcdsaError)?;
+            Ok(result)
         }
     }
 
