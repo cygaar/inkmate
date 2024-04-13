@@ -123,9 +123,8 @@ mod tests {
             // truncate to 20 bytes
             hash[..12].fill(0);
 
-            let result: [u8; NUM_BYTES_ADDRESS] = (&hash.as_slice()[12..32])
-                .try_into()
-                .map_err(|_| EcdsaError)?;
+            let result: [u8; NUM_BYTES_ADDRESS] =
+                hash.0[12..].try_into().map_err(|_| EcdsaError)?;
             Ok(result)
         }
     }

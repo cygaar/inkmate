@@ -56,13 +56,6 @@ pub enum ERC20Error {
     InvalidPermit(InvalidPermit),
 }
 
-pub fn bytes32_to_array(bytes_value: B256) -> [u8; 32] {
-    bytes_value
-        .as_slice()
-        .try_into()
-        .expect("Slice must be exactly 32 bytes")
-}
-
 // Internal functions
 impl<T: ERC20Params> ERC20<T> {
     pub fn _transfer(&mut self, from: Address, to: Address, value: U256) -> Result<(), ERC20Error> {
@@ -123,9 +116,9 @@ impl<T: ERC20Params> ERC20<T> {
         let version_hash = keccak("1");
 
         keccak(SolDomainHash::encode(&(
-            bytes32_to_array(eip712_domain_hash),
-            bytes32_to_array(name_hash),
-            bytes32_to_array(version_hash),
+            eip712_domain_hash.0,
+            name_hash.0,
+            version_hash.0,
             U256::from(block::chainid()),
             contract::address(),
         )))
@@ -218,37 +211,24 @@ impl<T: ERC20Params> ERC20<T> {
         let nonce = self.nonces.get(owner);
         self.nonces.setter(owner).set(nonce + U256::from(1));
 
-        let domain_separator = bytes32_to_array(self._domain_separator());
-
         let permit_typehash = keccak(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
         );
-        let struct_hash = SolStructHash::encode(&(
-            bytes32_to_array(permit_typehash),
-            owner,
-            spender,
-            value,
-            nonce,
-            deadline,
-        ));
+        let struct_hash =
+            SolStructHash::encode(&(permit_typehash.0, owner, spender, value, nonce, deadline));
         let struct_hash_array = struct_hash
             .as_slice()
             .try_into()
             .expect("Slice must be exactly 32 bytes");
         let signed_hash = keccak(SolSignedHash::encode(&(
             "\x19\x01".to_string(),
-            domain_separator,
+            self._domain_separator().0,
             struct_hash_array,
         )));
 
         let recovered_address = Address::from_slice(
-            &PrecompileEcRecover::ec_recover(
-                &bytes32_to_array(signed_hash),
-                v,
-                &bytes32_to_array(r),
-                &bytes32_to_array(s),
-            )
-            .map_err(|_| ERC20Error::InvalidPermit(InvalidPermit {}))?,
+            &PrecompileEcRecover::ec_recover(&signed_hash.0, v, &r.0, &s.0)
+                .map_err(|_| ERC20Error::InvalidPermit(InvalidPermit {}))?,
         );
 
         if recovered_address == Address::ZERO || recovered_address != owner {
