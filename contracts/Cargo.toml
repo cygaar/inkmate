@@ -1,0 +1,31 @@
+[package]
+name = "inkmate"
+version = "0.1.5"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+homepage = "https://github.com/OffchainLabs/stylus-hello-world"
+repository = "https://github.com/OffchainLabs/stylus-hello-world"
+keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
+description = "Building block smart contracts written in Rust for Stylus"
+
+[dependencies]
+common = { path = "../common" }
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+hex = { workspace = true }
+mini-alloc = "0.4.2"
+stylus-sdk = "0.4.3"
+
+[lib]
+crate-type = ["lib", "cdylib"]
+
+[features]
+export-abi = ["stylus-sdk/export-abi"]
+debug = ["stylus-sdk/debug"]
+
+[profile.release]
+codegen-units = 1
+strip = true
+lto = true
+panic = "abort"
+opt-level = "s"

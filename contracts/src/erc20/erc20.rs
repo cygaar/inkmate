@@ -1,7 +1,5 @@
-use crate::contracts::utils::ecrecover::{EcRecoverTrait, PrecompileEcRecover};
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
-
 use stylus_sdk::{
     alloy_primitives::{Address, B256, U256},
     alloy_sol_types::{sol, SolType},
@@ -10,6 +8,9 @@ use stylus_sdk::{
     evm, msg,
     prelude::*,
 };
+
+use crate::common::crypto::ecrecover::EcRecoverTrait;
+use crate::utils::ecrecover::PrecompileEcRecover;
 
 pub trait ERC20Params {
     const NAME: &'static str;

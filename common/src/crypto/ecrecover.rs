@@ -1,5 +1,3 @@
-use stylus_sdk::{alloy_primitives::Address, call::RawCall};
-
 /// The number of bytes in a hash digest used by the transcript
 pub const HASH_OUTPUT_SIZE: usize = 32;
 
@@ -56,35 +54,14 @@ pub trait EcRecoverTrait {
     ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError>;
 }
 
-pub struct PrecompileEcRecover;
-
-impl EcRecoverTrait for PrecompileEcRecover {
-    fn ecrecover_implementation(
-        input: [u8; EC_RECOVER_INPUT_LEN],
-    ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
-        let res = RawCall::new_static()
-            // Only get the last 20 bytes of the 32-byte return data
-            .limit_return_data(NUM_BYTES_U256 - NUM_BYTES_ADDRESS, NUM_BYTES_ADDRESS)
-            .call(
-                Address::with_last_byte(EC_RECOVER_ADDRESS_LAST_BYTE),
-                &input,
-            )
-            .map_err(|_| EcdsaError)?;
-
-        res.try_into().map_err(|_| EcdsaError)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
     use secp256k1::rand::rngs::OsRng;
     use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
-    use stylus_sdk::{
-        alloy_primitives::{B256, B512},
-        crypto::keccak,
-    };
+    use alloy_primitives::{B256, B512};
+    use ethers::utils::keccak256;
 
     struct RustEcRecover;
 
@@ -115,17 +92,17 @@ mod tests {
             let recovered_key = VerifyingKey::recover_from_prehash(&msg[..], &sig, recid)
                 .map_err(|_| EcdsaError)?;
             // hash it
-            let mut hash = keccak(
+            let hash = keccak256(
                 &recovered_key
                     .to_encoded_point(/* compress = */ false)
                     .as_bytes()[1..],
             );
 
             // truncate to 20 bytes
-            hash[..12].fill(0);
+            // hash[..12].fill(0);
 
             let result: [u8; NUM_BYTES_ADDRESS] =
-                hash.0[12..].try_into().map_err(|_| EcdsaError)?;
+                hash[12..].try_into().map_err(|_| EcdsaError)?;
             Ok(result)
         }
     }
