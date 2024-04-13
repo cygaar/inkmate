@@ -57,11 +57,11 @@ pub trait EcRecoverTrait {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
-    use secp256k1::rand::rngs::OsRng;
-    use secp256k1::{Message, PublicKey, Secp256k1, SecretKey};
     use alloy_primitives::{B256, B512};
     use ethers::utils::keccak256;
+    use k256::ecdsa::{RecoveryId, Signature, VerifyingKey};
+    use secp256k1::rand::rngs::OsRng;
+    use secp256k1::{Message, Secp256k1};
 
     struct RustEcRecover;
 
@@ -100,9 +100,7 @@ mod tests {
 
             // truncate to 20 bytes
             // hash[..12].fill(0);
-
-            let result: [u8; NUM_BYTES_ADDRESS] =
-                hash[12..].try_into().map_err(|_| EcdsaError)?;
+            let result: [u8; NUM_BYTES_ADDRESS] = hash[12..].try_into().map_err(|_| EcdsaError)?;
             Ok(result)
         }
     }
@@ -110,11 +108,38 @@ mod tests {
     #[test]
     fn test_ec_recover_with_known_good() {
         let secp = Secp256k1::new();
+
         // Generate a new private key
         let (secret_key, public_key) = secp.generate_keypair(&mut OsRng);
-        assert!(
-            true,
-            "This test will always pass because the condition is true."
+
+        // Create a hash of a message
+        let message = "Hello, Ethereum!";
+        let hash = keccak256(message.as_bytes());
+        let msg = Message::from_digest_slice(&hash).unwrap();
+
+        let recoverable_signature = secp.sign_ecdsa_recoverable(&msg, &secret_key);
+        let (rec_id, sig_bytes) = recoverable_signature.serialize_compact();
+        let mut rec_id = rec_id.to_i32() as u8;
+        rec_id += 27;
+
+        let mut r = [0u8; 32];
+        r.copy_from_slice(&sig_bytes[0..32]);
+        let mut s = [0u8; 32];
+        s.copy_from_slice(&sig_bytes[32..64]);
+
+        let result =
+            RustEcRecover::ec_recover(&hash, rec_id, &r, &s).expect("Recovery should succeed");
+        let expected_address = {
+            let recovered_key = public_key.serialize_uncompressed();
+            let keccak_hash = keccak256(&recovered_key[1..]); // Skip the first byte
+            let mut address = [0u8; 20];
+            address.copy_from_slice(&keccak_hash[12..32]);
+            address
+        };
+
+        assert_eq!(
+            result, expected_address,
+            "Recovered address should match the expected address"
         );
     }
 }
