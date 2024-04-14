@@ -1,10 +1,8 @@
 [package]
 name = "inkmate"
-version = "0.1.5"
+version = "0.0.1"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/OffchainLabs/stylus-hello-world"
-repository = "https://github.com/OffchainLabs/stylus-hello-world"
 keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
 description = "Building block smart contracts written in Rust for Stylus"
 

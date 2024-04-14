@@ -1615,7 +1615,7 @@ dependencies = [
 
 [[package]]
 name = "inkmate"
-version = "0.1.5"
+version = "0.0.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
