@@ -7,5 +7,6 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 extern crate common;
 
-mod erc20;
+mod examples;
 mod utils;
+pub mod erc20;

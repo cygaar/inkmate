@@ -1,5 +1,5 @@
 //! A test contract inheriting from the ERC20 base contract
-use crate::contracts::erc20::erc20::{ERC20Params, ERC20};
+use crate::erc20::erc20::{ERC20Params, ERC20};
 use alloc::vec::Vec;
 use stylus_sdk::{alloy_primitives::U256, msg, prelude::*};
 
