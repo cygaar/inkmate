@@ -7,7 +7,7 @@ struct ERC20MockParams;
 
 /// Immutable definitions
 impl ERC20Params for ERC20MockParams {
-    const NAME: &'static str = "ERC20 Example";
+    const NAME: &'static str = "ERC20 Stylus Example";
     const SYMBOL: &'static str = "MOCK";
     const DECIMALS: u8 = 18;
 }
