@@ -228,7 +228,7 @@ impl<T: ERC20Params> ERC20<T> {
         )));
 
         let recovered_address = Address::from_slice(
-            &PrecompileEcRecover::ec_recover(&signed_hash.0, v, &r.0, &s.0)
+            &PrecompileEcRecover::ecrecover(&signed_hash.0, v, &r.0, &s.0)
                 .map_err(|_| ERC20Error::InvalidPermit(InvalidPermit {}))?,
         );
 

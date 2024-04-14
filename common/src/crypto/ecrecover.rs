@@ -18,7 +18,7 @@ pub const EC_RECOVER_ADDRESS_LAST_BYTE: u8 = 1;
 pub struct EcdsaError;
 
 pub trait EcRecoverTrait {
-    fn ec_recover(
+    fn ecrecover(
         message_hash: &[u8; HASH_OUTPUT_SIZE],
         v: u8,
         r: &[u8; NUM_BYTES_U256],
@@ -113,15 +113,15 @@ mod tests {
         let (secret_key, public_key) = secp.generate_keypair(&mut OsRng);
 
         // Create a hash of a message
-        let message = "Hello, Ethereum!";
+        let message = "Hello, Stylus!";
         let hash = keccak256(message.as_bytes());
         let msg = Message::from_digest_slice(&hash).unwrap();
 
+        // Parse r, s, v values
         let recoverable_signature = secp.sign_ecdsa_recoverable(&msg, &secret_key);
         let (rec_id, sig_bytes) = recoverable_signature.serialize_compact();
         let mut rec_id = rec_id.to_i32() as u8;
         rec_id += 27;
-
         let r: [u8; 32] = sig_bytes[0..32]
             .try_into()
             .expect("Slice with incorrect length");
@@ -129,8 +129,9 @@ mod tests {
             .try_into()
             .expect("Slice with incorrect length");
 
+        // Test ecrecover function using the native rust implementation
         let result =
-            RustEcRecover::ec_recover(&hash, rec_id, &r, &s).expect("Recovery should succeed");
+            RustEcRecover::ecrecover(&hash, rec_id, &r, &s).expect("Recovery should succeed");
         let expected_address = {
             let recovered_key = public_key.serialize_uncompressed();
             let keccak_hash = keccak256(&recovered_key[1..]); // Skip the first byte
