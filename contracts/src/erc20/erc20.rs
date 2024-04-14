@@ -18,6 +18,7 @@ pub trait ERC20Params {
     const DECIMALS: u8;
 }
 
+// TODO: rename these
 type SolStructHash = sol! { tuple(bytes32, address, address, uint256, uint256, uint256) };
 type SolDomainHash = sol! { tuple(bytes32, bytes32, bytes32, uint256, address) };
 type SolSignedHash = sol! { tuple(string, bytes32, bytes32) };
@@ -232,7 +233,7 @@ impl<T: ERC20Params> ERC20<T> {
                 .map_err(|_| ERC20Error::InvalidPermit(InvalidPermit {}))?,
         );
 
-        if recovered_address == Address::ZERO || recovered_address != owner {
+        if recovered_address.is_zero() || recovered_address != owner {
             return Err(ERC20Error::InvalidPermit(InvalidPermit {}));
         }
 
