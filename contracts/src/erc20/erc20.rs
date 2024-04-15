@@ -110,7 +110,7 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(())
     }
 
-    pub fn _domain_separator(&mut self) -> B256 {
+    pub fn _domain_separator(&self) -> B256 {
         let eip712_domain_hash = keccak(
             "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
         );
@@ -191,9 +191,9 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(true)
     }
 
-    #[allow(non_snake_case)]
-    pub fn DOMAIN_SEPARATOR(&mut self) -> Result<B256, ERC20Error> {
-        Ok(self._domain_separator())
+    #[selector(name = "DOMAIN_SEPARATOR")]
+    pub fn domain_separator(&self) -> B256 {
+        self._domain_separator()
     }
 
     pub fn permit(
