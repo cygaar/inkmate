@@ -20,5 +20,9 @@ crate-type = ["lib", "cdylib"]
 [features]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
-
 erc20 = []
+
+[[example]]
+name = "erc20_abi"
+path = "examples/erc20_abi.rs"
+required-features = ["export-abi", "erc20"]
