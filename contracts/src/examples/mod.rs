@@ -1,1 +1,2 @@
-mod erc20_example;
+#[cfg(feature = "erc20")]
+mod erc20;
