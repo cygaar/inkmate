@@ -106,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn test_ec_recover_with_known_good() {
+    fn test_ec_recover_with_native_implementation() {
         let secp = Secp256k1::new();
 
         // Generate a new private key

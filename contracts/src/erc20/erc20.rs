@@ -216,16 +216,18 @@ impl<T: ERC20Params> ERC20<T> {
         let permit_typehash = keccak(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
         );
-        let struct_hash =
-            SolStructHash::encode(&(permit_typehash.0, owner, spender, value, nonce, deadline));
-        let struct_hash_array = struct_hash
-            .as_slice()
-            .try_into()
-            .expect("Slice must be exactly 32 bytes");
+        let struct_hash = keccak(SolStructHash::encode(&(
+            permit_typehash.0,
+            owner,
+            spender,
+            value,
+            nonce,
+            deadline,
+        )));
         let signed_hash = keccak(SolSignedHash::encode(&(
             "\x19\x01".to_string(),
             self._domain_separator().0,
-            struct_hash_array,
+            struct_hash.0,
         )));
 
         let recovered_address = Address::from_slice(
