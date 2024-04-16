@@ -7,6 +7,12 @@ Stylus contracts can lead to large gas savings, especially when it comes to memo
 
 `inkmate` currently only supports **Rust** smart contracts, but further support for other languages may be added in the future.
 
+## Safety
+
+This is **experimental software** and is provided on an "as is" and "as available" basis. **This code has not been audited!**
+
+We **do not give any warranties** and **will not be liable for any loss** incurred through any use of this codebase.
+
 ## Contracts
 
 ```ml
@@ -83,12 +89,6 @@ impl ERC20Mock {
     }
 }
 ```
-
-## Safety
-
-This is **experimental software** and is provided on an "as is" and "as available" basis.
-
-We **do not give any warranties** and **will not be liable for any loss** incurred through any use of this codebase.
 
 ## Contributing
 
