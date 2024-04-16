@@ -129,6 +129,6 @@ These contracts were inspired by or directly modified from many sources, primari
 
 - [solmate](https://github.com/transmissions11/solmate)
 - [renegade](https://github.com/renegade-fi/renegade-contracts)
-- [solady](https://github.com/Vectorized/solady)a
+- [solady](https://github.com/Vectorized/solady)
 - [revm](https://github.com/bluealloy/revm)
 - [stylus-sdk](https://github.com/OffchainLabs/stylus-sdk-rs)
