@@ -1,5 +1,5 @@
 //! An example ERC20 contract
-use crate::erc20::erc20::{ERC20Params, ERC20};
+use crate::tokens::erc20::{ERC20Params, ERC20};
 use alloc::vec::Vec;
 use stylus_sdk::{alloy_primitives::U256, msg, prelude::*};
 

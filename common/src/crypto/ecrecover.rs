@@ -1,3 +1,10 @@
+//! Defines the ecrecover trait which calls an implementation that can implemented
+//! through a precompile call or natively in rust. The native rust implementation is only
+//! used for testing purposes as the binary size for the compiled WASM is too large for Stylus.
+//!
+//! This code is based off of Renegade's implementation:
+//! https://github.com/renegade-fi/renegade-contracts/blob/main/contracts-stylus/src/utils/backends.rs#L115
+
 /// The number of bytes in a hash digest used by the transcript
 pub const HASH_OUTPUT_SIZE: usize = 32;
 

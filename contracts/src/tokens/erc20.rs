@@ -1,3 +1,5 @@
+//! ERC20 base contract with EIP2612 (permit) support
+
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
 use stylus_sdk::{
@@ -19,22 +21,16 @@ pub trait ERC20Params {
 }
 
 sol_storage! {
-    /// ERC20 implements all ERC-20 methods.
     pub struct ERC20<T> {
-        /// Maps users to balances
-        mapping(address => uint256) balances;
-        /// Maps users to a mapping of each spender's allowance
-        mapping(address => mapping(address => uint256)) allowances;
-        /// The total supply of the token
         uint256 total_supply;
-        /// Nonces used for EIP2612
+        mapping(address => uint256) balances;
+        mapping(address => mapping(address => uint256)) allowances;
         mapping(address => uint256) nonces;
-        /// Used to allow [`ERC20Params`]
         PhantomData<T> phantom;
     }
 }
 
-// Declare events and Solidity error types
+// Define events and errors in the contract
 sol! {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -52,6 +48,18 @@ pub enum ERC20Error {
     PermitExpired(PermitExpired),
     InvalidPermit(InvalidPermit),
 }
+
+// keccak256("1")
+const VERSION_HASH: B256 =
+    fixed_bytes!("c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6");
+
+// keccack256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
+const EIP_712_DOMAIN_HASH: B256 =
+    fixed_bytes!("8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f");
+
+// keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
+const PERMIT_TYPEHASH: B256 =
+    fixed_bytes!("6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9");
 
 // Internal functions
 impl<T: ERC20Params> ERC20<T> {
@@ -105,20 +113,12 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(())
     }
 
-    pub fn _domain_separator(&self) -> B256 {
-        // keccack256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
-        let eip712_domain_hash =
-            fixed_bytes!("8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f");
-        // keccak256("1")
-        let version_hash =
-            fixed_bytes!("c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6");
-        let name_hash = keccak(T::NAME.as_bytes());
-
+    pub fn _compute_domain_separator(&self) -> B256 {
         keccak(
             <sol! { (bytes32, bytes32, bytes32, uint256, address) }>::encode(&(
-                eip712_domain_hash.0,
-                name_hash.0,
-                version_hash.0,
+                EIP_712_DOMAIN_HASH.0,
+                keccak(T::NAME.as_bytes()).0,
+                VERSION_HASH.0,
                 U256::from(block::chainid()),
                 contract::address(),
             )),
@@ -126,6 +126,7 @@ impl<T: ERC20Params> ERC20<T> {
     }
 }
 
+// External functions
 #[external]
 impl<T: ERC20Params> ERC20<T> {
     pub fn name() -> String {
@@ -191,7 +192,7 @@ impl<T: ERC20Params> ERC20<T> {
 
     #[selector(name = "DOMAIN_SEPARATOR")]
     pub fn domain_separator(&self) -> B256 {
-        self._domain_separator()
+        self._compute_domain_separator()
     }
 
     pub fn permit(
@@ -211,13 +212,9 @@ impl<T: ERC20Params> ERC20<T> {
         let nonce = self.nonces.get(owner);
         self.nonces.setter(owner).set(nonce + U256::from(1));
 
-        // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
-        let permit_typehash =
-            fixed_bytes!("6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9");
-
         let struct_hash = keccak(
             <sol! { (bytes32, address, address, uint256, uint256, uint256) }>::encode(&(
-                permit_typehash.0,
+                PERMIT_TYPEHASH.0,
                 owner,
                 spender,
                 value,
@@ -228,7 +225,7 @@ impl<T: ERC20Params> ERC20<T> {
 
         let signed_hash = keccak(<sol! { (string, bytes32, bytes32) }>::encode_packed(&(
             "\x19\x01".to_string(),
-            self._domain_separator().0,
+            self._compute_domain_separator().0,
             struct_hash.0,
         )));
 

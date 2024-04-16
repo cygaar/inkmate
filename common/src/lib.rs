@@ -1,3 +1,3 @@
-extern crate alloc;
+//! Common utility functions
 
 pub mod crypto;
