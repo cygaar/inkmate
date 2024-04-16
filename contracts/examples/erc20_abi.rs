@@ -3,7 +3,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use inkmate::erc20::erc20::{ERC20Params, ERC20};
+use inkmate::tokens::erc20::{ERC20Params, ERC20};
 use stylus_sdk::{alloy_primitives::U256, msg, prelude::*};
 
 struct ERC20MockParams;
