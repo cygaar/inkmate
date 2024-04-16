@@ -31,7 +31,7 @@ pub trait EcRecoverTrait {
         r: &[u8; NUM_BYTES_U256],
         s: &[u8; NUM_BYTES_U256],
     ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
-        // Prepare the input data for the `ecRecover` precompile, namely:
+        // Prepare the input data for the `ecrecover` precompile, namely:
         // input[0..32] = message_hash
         // input[32..64] = v (big-endian)
         // input[64..96] = r (big-endian)
@@ -73,6 +73,8 @@ mod tests {
     struct RustEcRecover;
 
     impl EcRecoverTrait for RustEcRecover {
+        /// ecrecover implementation based off of revm's precompile:
+        /// https://github.com/bluealloy/revm/blob/main/crates/precompile/src/secp256k1.rs#L13
         fn ecrecover_implementation(
             input: [u8; EC_RECOVER_INPUT_LEN],
         ) -> Result<[u8; NUM_BYTES_ADDRESS], EcdsaError> {
