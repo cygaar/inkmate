@@ -1,4 +1,5 @@
-//! ERC20 base contract with EIP2612 (permit) support
+//! ERC20 base contract with EIP2612 (permit) support.
+//! Doc comments are forked from: https://github.com/Vectorized/solady/blob/main/src/tokens/ERC20.sol
 
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
@@ -63,6 +64,7 @@ const PERMIT_TYPEHASH: B256 =
 
 // Internal functions
 impl<T: ERC20Params> ERC20<T> {
+    /// Moves `amount` of tokens from `from` to `to`.
     pub fn _transfer(&mut self, from: Address, to: Address, value: U256) -> Result<(), ERC20Error> {
         let mut sender_balance = self.balances.setter(from);
         let old_sender_balance = sender_balance.get();
@@ -81,6 +83,9 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(())
     }
 
+    /// Mints `amount` tokens to `to`, increasing the total supply.
+    ///
+    /// Emits a {Transfer} event.
     pub fn _mint(&mut self, address: Address, value: U256) {
         let mut balance = self.balances.setter(address);
         let new_balance = balance.get() + value;
@@ -93,6 +98,9 @@ impl<T: ERC20Params> ERC20<T> {
         });
     }
 
+    /// Burns `amount` tokens from `from`, reducing the total supply.
+    ///
+    /// Emits a {Transfer} event.
     pub fn _burn(&mut self, address: Address, value: U256) -> Result<(), ERC20Error> {
         let mut balance = self.balances.setter(address);
         let old_balance = balance.get();
@@ -113,6 +121,7 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(())
     }
 
+    /// Computes the domain separator for the current contract and chain
     pub fn _compute_domain_separator(&self) -> B256 {
         keccak(
             <sol! { (bytes32, bytes32, bytes32, uint256, address) }>::encode(&(
@@ -141,23 +150,35 @@ impl<T: ERC20Params> ERC20<T> {
         T::DECIMALS
     }
 
+    /// Returns the amount of tokens in existence.
     pub fn total_supply(&self) -> U256 {
         self.total_supply.get()
     }
 
+    /// Returns the amount of tokens owned by `owner`.
     pub fn balance_of(&self, address: Address) -> U256 {
         self.balances.get(address)
     }
 
+    /// Returns the amount of tokens that `spender` can spend on behalf of `owner`.
     pub fn allowance(&self, owner: Address, spender: Address) -> U256 {
         self.allowances.getter(owner).get(spender)
     }
 
+    /// Transfer `amount` tokens from the caller to `to`.
+    ///
+    /// Requirements:
+    /// - `from` must at least have `amount`.
+    ///
+    /// Emits a {Transfer} event.
     pub fn transfer(&mut self, to: Address, value: U256) -> Result<bool, ERC20Error> {
         self._transfer(msg::sender(), to, value)?;
         Ok(true)
     }
 
+    /// Sets `amount` as the allowance of `spender` over the caller's tokens.
+    ///
+    /// Emits a {Approval} event.
     pub fn approve(&mut self, spender: Address, value: U256) -> bool {
         self.allowances.setter(msg::sender()).insert(spender, value);
         evm::log(Approval {
@@ -168,6 +189,13 @@ impl<T: ERC20Params> ERC20<T> {
         true
     }
 
+    /// Transfers `amount` tokens from `from` to `to`.
+    ///
+    /// Requirements:
+    /// - `from` must at least have `amount`.
+    /// - The caller must have at least `amount` of allowance to transfer the tokens of `from`.
+    ///
+    /// Emits a {Transfer} event.
     pub fn transfer_from(
         &mut self,
         from: Address,
@@ -190,11 +218,16 @@ impl<T: ERC20Params> ERC20<T> {
         Ok(true)
     }
 
+    /// @dev Returns the EIP-712 domain separator for the EIP-2612 permit.
     #[selector(name = "DOMAIN_SEPARATOR")]
     pub fn domain_separator(&self) -> B256 {
         self._compute_domain_separator()
     }
 
+    /// @dev Sets `value` as the allowance of `spender` over the tokens of `owner`,
+    /// authorized by a signed approval by `owner`.
+    ///
+    /// Emits a {Approval} event.
     pub fn permit(
         &mut self,
         owner: Address,
@@ -242,6 +275,12 @@ impl<T: ERC20Params> ERC20<T> {
             .setter(recovered_address)
             .setter(spender)
             .set(value);
+
+        evm::log(Approval {
+            owner,
+            spender,
+            value,
+        });
 
         Ok(())
     }
