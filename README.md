@@ -101,7 +101,7 @@ To test the validity of our code (ex. erc20), there is a `mocks` folder which co
 
 To build the binary for your selected feature (ex. erc20), you can run:
 ```bash
-cargo build --target wasm32-unknown-unknown --lib --release --features=erc20
+cargo build --target wasm32-unknown-unknown --lib --release --features=erc20,mock
 ```
 
 Then to run check the validity of the contract you can run:

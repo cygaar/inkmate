@@ -1,6 +1,6 @@
 [package]
 name = "inkmate"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
 license = "MIT"
 keywords = ["arbitrum", "ethereum", "stylus", "alloy", "inkmate"]
@@ -23,6 +23,7 @@ default = ["erc20"]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
 erc20 = []
+mock = []
 
 [[example]]
 name = "erc20_abi"
