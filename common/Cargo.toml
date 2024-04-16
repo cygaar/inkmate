@@ -1,0 +1,25 @@
+[package]
+name = "inkmate-common"
+version = "0.0.1"
+edition = "2021"
+license = "MIT"
+description = "Common utilities for inkmate"
+keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
+
+[dependencies]
+alloy-primitives = { workspace = true }
+alloy-sol-types = { workspace = true }
+
+[dev-dependencies]
+ethers = "2.0"
+eyre = "0.6.8"
+mockall = "0.10.2"
+
+# ecRecover precompile
+k256 = { version = "0.13.3", default-features = false, features = ["ecdsa"] }
+secp256k1 = { version = "0.29.0", default-features = false, features = [
+    "alloc",
+    "recovery",
+    "rand",
+    "global-context",
+]}
