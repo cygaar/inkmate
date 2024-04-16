@@ -1,4 +1,5 @@
 //! ERC20 base contract with EIP2612 (permit) support.
+//! The logic was based off of: https://github.com/OffchainLabs/stylus-sdk-rs/blob/stylus/examples/erc20/src/erc20.rs
 //! Doc comments are forked from: https://github.com/Vectorized/solady/blob/main/src/tokens/ERC20.sol
 
 use alloc::string::{String, ToString};
