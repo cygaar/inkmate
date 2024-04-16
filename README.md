@@ -73,6 +73,15 @@ impl ERC20Mock {
 }
 ```
 
+## Testing
+
+Currently, only unit tests for specific pieces of logic are supported. A full set of integration tests will be added soon to test contract interaction logic.
+
+To run unit tests, you can run:
+```bash
+cargo test -p inkmate-common
+```
+
 ## Safety
 
 This is **experimental software** and is provided on an "as is" and "as available" basis.
@@ -85,4 +94,5 @@ These contracts were inspired by or directly modified from many sources, primari
 
 - [solmate](https://github.com/transmissions11/solmate)
 - [renegade](https://github.com/renegade-fi/renegade-contracts)
+- [solady](https://github.com/Vectorized/solady)a
 - [revm](https://github.com/bluealloy/revm)
