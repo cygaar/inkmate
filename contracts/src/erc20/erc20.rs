@@ -224,7 +224,7 @@ impl<T: ERC20Params> ERC20<T> {
             nonce,
             deadline,
         )));
-        let signed_hash = keccak(SolSignedHash::encode(&(
+        let signed_hash = keccak(SolSignedHash::encode_packed(&(
             "\x19\x01".to_string(),
             self._domain_separator().0,
             struct_hash.0,
