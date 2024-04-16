@@ -32,6 +32,17 @@ Install `inkmate` by running:
 cargo add inkmate
 ```
 
+If you want to only install certain features (ex. erc20), you can run:
+```bash
+cargo add inkmate --features "erc20"
+```
+
+Alternatively, you can add the following to your `Cargo.toml` file:
+```toml
+[dependencies]
+inkmate = { version = "0.0.1", features = ["erc20"] }
+```
+
 Here's an example contract that uses `inkmate`
 ```rust
 extern crate alloc;
@@ -73,6 +84,36 @@ impl ERC20Mock {
 }
 ```
 
+## Safety
+
+This is **experimental software** and is provided on an "as is" and "as available" basis.
+
+We **do not give any warranties** and **will not be liable for any loss** incurred through any use of this codebase.
+
+## Contributing
+
+This repo is setup as a single Rust workspace with two crates - `common` which contains common utility functions and `contracts` which contains the primary contract logic.
+
+The `contracts` crate consists of multiple features to allow for conditional compilation and optional dependencies. This helps reduce binary sizes for Stylus contracts.
+
+Because the `contracts` crate is feature gated, you cannot run `cargo stylus check` as you normally would.
+To test the validity of our code (ex. erc20), there is a `mocks` folder which contains sample implementations used to create a sample binary.
+
+To build the binary for your selected feature (ex. erc20), you can run:
+```bash
+cargo build --target wasm32-unknown-unknown --lib --release --features=erc20
+```
+
+Then to run check the validity of the contract you can run:
+```bash
+cargo stylus check --wasm-file-path target/wasm32-unknown-unknown/release/inkmate.wasm
+```
+
+Finally, you can deploy the contract to the Stylus testnet by running:
+```bash
+cargo stylus deploy -e https://stylus-testnet.arbitrum.io/rpc --private-key=<PRIVATE_KEY> --wasm-file-path target/wasm32-unknown-unknown/release/deps/inkmate.wasm
+```
+
 ## Testing
 
 Currently, only unit tests for specific pieces of logic are supported. A full set of integration tests will be added soon to test contract interaction logic.
@@ -81,12 +122,6 @@ To run unit tests, you can run:
 ```bash
 cargo test -p inkmate-common
 ```
-
-## Safety
-
-This is **experimental software** and is provided on an "as is" and "as available" basis.
-
-We **do not give any warranties** and **will not be liable for any loss** incurred through any use of this codebase.
 
 ## Acknowledgements
 
