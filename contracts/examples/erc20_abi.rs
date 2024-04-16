@@ -1,4 +1,4 @@
-//! This file is used to generate an ABI since there is no executable to generate the abi in the base library.
+//! This file is used to generate an ABI since there is no executable to generate the abi for in the base library.
 //! To generate the abi, you can run: `cargo run --example erc20_abi --features=export-abi,erc20`
 extern crate alloc;
 
