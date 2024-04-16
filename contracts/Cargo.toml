@@ -19,6 +19,7 @@ stylus-sdk = "0.4.3"
 crate-type = ["lib", "cdylib"]
 
 [features]
+default = ["erc20"]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
 erc20 = []
