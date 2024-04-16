@@ -1,9 +1,10 @@
 [package]
-name = "common"
+name = "inkmate-common"
 version = "0.0.1"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+description = "Common utilities for Inkmate"
+keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
 
 [dependencies]
 alloy-primitives = { workspace = true }

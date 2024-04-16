@@ -433,19 +433,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "common"
-version = "0.0.1"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "ethers",
- "eyre",
- "k256",
- "mockall",
- "secp256k1",
-]
-
-[[package]]
 name = "const-hex"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1614,13 +1601,26 @@ dependencies = [
 ]
 
 [[package]]
-name = "inkmate"
+name = "inkmate-common"
 version = "0.0.1"
 dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
- "common",
+ "ethers",
+ "eyre",
+ "k256",
+ "mockall",
+ "secp256k1",
+]
+
+[[package]]
+name = "inkmate-contracts"
+version = "0.0.1"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
  "hex",
+ "inkmate-common",
  "mini-alloc",
  "stylus-sdk",
 ]

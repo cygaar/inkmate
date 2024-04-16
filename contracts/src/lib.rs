@@ -10,7 +10,7 @@ extern crate alloc;
 static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 
 // Common utility contracts from the workspace
-extern crate common;
+extern crate inkmate_common;
 
 // Conditional compilation of the ERC20 token module
 #[cfg(any(feature = "erc20",))]

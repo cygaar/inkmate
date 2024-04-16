@@ -11,7 +11,7 @@ use stylus_sdk::{
     prelude::*,
 };
 
-use crate::common::crypto::ecrecover::EcRecoverTrait;
+use crate::inkmate_common::crypto::ecrecover::EcRecoverTrait;
 use crate::utils::ecrecover::PrecompileEcRecover;
 
 pub trait ERC20Params {

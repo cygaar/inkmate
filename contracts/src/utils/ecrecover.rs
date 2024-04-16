@@ -1,6 +1,6 @@
 //! Calls the ecrecover EVM precompile through a static call and returns the recovered address
 
-use crate::common::crypto::ecrecover::{
+use crate::inkmate_common::crypto::ecrecover::{
     EcRecoverTrait, EcdsaError, EC_RECOVER_ADDRESS_LAST_BYTE, EC_RECOVER_INPUT_LEN,
     NUM_BYTES_ADDRESS, NUM_BYTES_U256,
 };

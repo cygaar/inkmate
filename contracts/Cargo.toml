@@ -1,13 +1,13 @@
 [package]
-name = "inkmate"
+name = "inkmate-contracts"
 version = "0.0.1"
 edition = "2021"
-license = "MIT OR Apache-2.0"
+license = "MIT"
 keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
 description = "Building block smart contracts written in Rust for Stylus"
 
 [dependencies]
-common = { path = "../common", version = "0.0.1" }
+inkmate-common = { path = "../common", version = "0.0.1" }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 hex = { workspace = true }
