@@ -16,8 +16,8 @@ extern crate common;
 #[cfg(any(feature = "erc20",))]
 pub mod tokens;
 
-// Module for example implementations and demos
-mod examples;
+// Module for mock implementations
+mod mocks;
 
 // Utility functions and helpers used across the library
 mod utils;
