@@ -3,8 +3,9 @@ name = "inkmate-contracts"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
-keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
+keywords = ["arbitrum", "ethereum", "stylus", "alloy", "inkmate"]
 description = "Building block smart contracts written in Rust for Stylus"
+homapage = "https://github.com/cygaar/inkmate"
 
 [dependencies]
 inkmate-common = { path = "../common", version = "0.0.1" }

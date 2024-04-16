@@ -4,7 +4,8 @@ version = "0.0.1"
 edition = "2021"
 license = "MIT"
 description = "Common utilities for inkmate"
-keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
+keywords = ["arbitrum", "ethereum", "stylus", "alloy", "inkmate"]
+homapage = "https://github.com/cygaar/inkmate"
 
 [dependencies]
 alloy-primitives = { workspace = true }
