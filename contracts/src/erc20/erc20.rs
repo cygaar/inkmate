@@ -18,11 +18,6 @@ pub trait ERC20Params {
     const DECIMALS: u8;
 }
 
-// TODO: rename these
-type SolStructHash = sol! { tuple(bytes32, address, address, uint256, uint256, uint256) };
-type SolDomainHash = sol! { tuple(bytes32, bytes32, bytes32, uint256, address) };
-type SolSignedHash = sol! { tuple(string, bytes32, bytes32) };
-
 sol_storage! {
     /// ERC20 implements all ERC-20 methods.
     pub struct ERC20<T> {
@@ -117,13 +112,15 @@ impl<T: ERC20Params> ERC20<T> {
         let name_hash = keccak(T::NAME.as_bytes());
         let version_hash = keccak("1");
 
-        keccak(SolDomainHash::encode(&(
-            eip712_domain_hash.0,
-            name_hash.0,
-            version_hash.0,
-            U256::from(block::chainid()),
-            contract::address(),
-        )))
+        keccak(
+            <sol! { (bytes32, bytes32, bytes32, uint256, address) }>::encode(&(
+                eip712_domain_hash.0,
+                name_hash.0,
+                version_hash.0,
+                U256::from(block::chainid()),
+                contract::address(),
+            )),
+        )
     }
 }
 
@@ -216,15 +213,17 @@ impl<T: ERC20Params> ERC20<T> {
         let permit_typehash = keccak(
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
         );
-        let struct_hash = keccak(SolStructHash::encode(&(
-            permit_typehash.0,
-            owner,
-            spender,
-            value,
-            nonce,
-            deadline,
-        )));
-        let signed_hash = keccak(SolSignedHash::encode_packed(&(
+        let struct_hash = keccak(
+            <sol! { (bytes32, address, address, uint256, uint256, uint256) }>::encode(&(
+                permit_typehash.0,
+                owner,
+                spender,
+                value,
+                nonce,
+                deadline,
+            )),
+        );
+        let signed_hash = keccak(<sol! { (string, bytes32, bytes32) }>::encode_packed(&(
             "\x19\x01".to_string(),
             self._domain_separator().0,
             struct_hash.0,
