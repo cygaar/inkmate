@@ -1601,6 +1601,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "inkmate"
+version = "0.0.1"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "hex",
+ "inkmate-common",
+ "mini-alloc",
+ "stylus-sdk",
+]
+
+[[package]]
 name = "inkmate-common"
 version = "0.0.1"
 dependencies = [
@@ -1611,18 +1623,6 @@ dependencies = [
  "k256",
  "mockall",
  "secp256k1",
-]
-
-[[package]]
-name = "inkmate-contracts"
-version = "0.0.1"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "hex",
- "inkmate-common",
- "mini-alloc",
- "stylus-sdk",
 ]
 
 [[package]]
