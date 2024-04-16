@@ -33,24 +33,26 @@ sol_storage! {
 
 // Define events and errors in the contract
 sol! {
+    /// Emitted when `amount` tokens is transferred from `from` to `to`.
     event Transfer(address indexed from, address indexed to, uint256 value);
+    /// Emitted when `amount` tokens is approved by `owner` to be used by `spender`.
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
+    /// Insufficient balance.
     error InsufficientBalance(address from, uint256 have, uint256 want);
+    /// Insufficient allowance.
     error InsufficientAllowance(address owner, address spender, uint256 have, uint256 want);
+    /// The permit has expired.
     error PermitExpired();
+    /// The permit is invalid.
     error InvalidPermit();
 }
 
 #[derive(SolidityError)]
 pub enum ERC20Error {
-    /// Insufficient balance.
     InsufficientBalance(InsufficientBalance),
-    /// Insufficient allowance.
     InsufficientAllowance(InsufficientAllowance),
-    /// The permit has expired.
     PermitExpired(PermitExpired),
-    /// The permit is invalid.
     InvalidPermit(InvalidPermit),
 }
 
