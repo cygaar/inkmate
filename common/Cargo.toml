@@ -3,7 +3,7 @@ name = "inkmate-common"
 version = "0.0.1"
 edition = "2021"
 license = "MIT"
-description = "Common utilities for Inkmate"
+description = "Common utilities for inkmate"
 keywords = ["arbitrum", "ethereum", "stylus", "alloy"]
 
 [dependencies]
