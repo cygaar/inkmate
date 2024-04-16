@@ -44,9 +44,13 @@ sol! {
 
 #[derive(SolidityError)]
 pub enum ERC20Error {
+    /// Insufficient balance.
     InsufficientBalance(InsufficientBalance),
+    /// Insufficient allowance.
     InsufficientAllowance(InsufficientAllowance),
+    /// The permit has expired.
     PermitExpired(PermitExpired),
+    /// The permit is invalid.
     InvalidPermit(InvalidPermit),
 }
 
@@ -65,58 +69,67 @@ const PERMIT_TYPEHASH: B256 =
 // Internal functions
 impl<T: ERC20Params> ERC20<T> {
     /// Moves `amount` of tokens from `from` to `to`.
-    pub fn _transfer(&mut self, from: Address, to: Address, value: U256) -> Result<(), ERC20Error> {
+    pub fn _transfer(
+        &mut self,
+        from: Address,
+        to: Address,
+        amount: U256,
+    ) -> Result<(), ERC20Error> {
         let mut sender_balance = self.balances.setter(from);
         let old_sender_balance = sender_balance.get();
-        if old_sender_balance < value {
+        if old_sender_balance < amount {
             return Err(ERC20Error::InsufficientBalance(InsufficientBalance {
                 from,
                 have: old_sender_balance,
-                want: value,
+                want: amount,
             }));
         }
-        sender_balance.set(old_sender_balance - value);
+        sender_balance.set(old_sender_balance - amount);
         let mut to_balance = self.balances.setter(to);
-        let new_to_balance = to_balance.get() + value;
+        let new_to_balance = to_balance.get() + amount;
         to_balance.set(new_to_balance);
-        evm::log(Transfer { from, to, value });
+        evm::log(Transfer {
+            from,
+            to,
+            value: amount,
+        });
         Ok(())
     }
 
     /// Mints `amount` tokens to `to`, increasing the total supply.
     ///
     /// Emits a {Transfer} event.
-    pub fn _mint(&mut self, address: Address, value: U256) {
+    pub fn _mint(&mut self, address: Address, amount: U256) {
         let mut balance = self.balances.setter(address);
-        let new_balance = balance.get() + value;
+        let new_balance = balance.get() + amount;
         balance.set(new_balance);
-        self.total_supply.set(self.total_supply.get() + value);
+        self.total_supply.set(self.total_supply.get() + amount);
         evm::log(Transfer {
             from: Address::ZERO,
             to: address,
-            value,
+            value: amount,
         });
     }
 
     /// Burns `amount` tokens from `from`, reducing the total supply.
     ///
     /// Emits a {Transfer} event.
-    pub fn _burn(&mut self, address: Address, value: U256) -> Result<(), ERC20Error> {
+    pub fn _burn(&mut self, address: Address, amount: U256) -> Result<(), ERC20Error> {
         let mut balance = self.balances.setter(address);
         let old_balance = balance.get();
-        if old_balance < value {
+        if old_balance < amount {
             return Err(ERC20Error::InsufficientBalance(InsufficientBalance {
                 from: address,
                 have: old_balance,
-                want: value,
+                want: amount,
             }));
         }
-        balance.set(old_balance - value);
-        self.total_supply.set(self.total_supply.get() - value);
+        balance.set(old_balance - amount);
+        self.total_supply.set(self.total_supply.get() - amount);
         evm::log(Transfer {
             from: address,
             to: Address::ZERO,
-            value,
+            value: amount,
         });
         Ok(())
     }
@@ -171,20 +184,22 @@ impl<T: ERC20Params> ERC20<T> {
     /// - `from` must at least have `amount`.
     ///
     /// Emits a {Transfer} event.
-    pub fn transfer(&mut self, to: Address, value: U256) -> Result<bool, ERC20Error> {
-        self._transfer(msg::sender(), to, value)?;
+    pub fn transfer(&mut self, to: Address, amount: U256) -> Result<bool, ERC20Error> {
+        self._transfer(msg::sender(), to, amount)?;
         Ok(true)
     }
 
     /// Sets `amount` as the allowance of `spender` over the caller's tokens.
     ///
     /// Emits a {Approval} event.
-    pub fn approve(&mut self, spender: Address, value: U256) -> bool {
-        self.allowances.setter(msg::sender()).insert(spender, value);
+    pub fn approve(&mut self, spender: Address, amount: U256) -> bool {
+        self.allowances
+            .setter(msg::sender())
+            .insert(spender, amount);
         evm::log(Approval {
             owner: msg::sender(),
             spender,
-            value,
+            value: amount,
         });
         true
     }
@@ -200,21 +215,21 @@ impl<T: ERC20Params> ERC20<T> {
         &mut self,
         from: Address,
         to: Address,
-        value: U256,
+        amount: U256,
     ) -> Result<bool, ERC20Error> {
         let mut sender_allowances = self.allowances.setter(from);
         let mut allowance = sender_allowances.setter(msg::sender());
         let old_allowance = allowance.get();
-        if old_allowance < value {
+        if old_allowance < amount {
             return Err(ERC20Error::InsufficientAllowance(InsufficientAllowance {
                 owner: from,
                 spender: msg::sender(),
                 have: old_allowance,
-                want: value,
+                want: amount,
             }));
         }
-        allowance.set(old_allowance - value);
-        self._transfer(from, to, value)?;
+        allowance.set(old_allowance - amount);
+        self._transfer(from, to, amount)?;
         Ok(true)
     }
 
