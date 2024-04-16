@@ -1,7 +1,7 @@
 use alloc::string::{String, ToString};
 use core::marker::PhantomData;
 use stylus_sdk::{
-    alloy_primitives::{Address, B256, U256},
+    alloy_primitives::{fixed_bytes, Address, B256, U256},
     alloy_sol_types::{sol, SolType},
     block, contract,
     crypto::keccak,
@@ -106,11 +106,13 @@ impl<T: ERC20Params> ERC20<T> {
     }
 
     pub fn _domain_separator(&self) -> B256 {
-        let eip712_domain_hash = keccak(
-            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
-        );
+        // keccack256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)")
+        let eip712_domain_hash =
+            fixed_bytes!("8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f");
+        // keccak256("1")
+        let version_hash =
+            fixed_bytes!("c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc6");
         let name_hash = keccak(T::NAME.as_bytes());
-        let version_hash = keccak("1");
 
         keccak(
             <sol! { (bytes32, bytes32, bytes32, uint256, address) }>::encode(&(
@@ -124,7 +126,6 @@ impl<T: ERC20Params> ERC20<T> {
     }
 }
 
-// These methods are external to other contracts
 #[external]
 impl<T: ERC20Params> ERC20<T> {
     pub fn name() -> String {
@@ -210,9 +211,10 @@ impl<T: ERC20Params> ERC20<T> {
         let nonce = self.nonces.get(owner);
         self.nonces.setter(owner).set(nonce + U256::from(1));
 
-        let permit_typehash = keccak(
-            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)",
-        );
+        // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)")
+        let permit_typehash =
+            fixed_bytes!("6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9");
+
         let struct_hash = keccak(
             <sol! { (bytes32, address, address, uint256, uint256, uint256) }>::encode(&(
                 permit_typehash.0,
@@ -223,6 +225,7 @@ impl<T: ERC20Params> ERC20<T> {
                 deadline,
             )),
         );
+
         let signed_hash = keccak(<sol! { (string, bytes32, bytes32) }>::encode_packed(&(
             "\x19\x01".to_string(),
             self._domain_separator().0,
