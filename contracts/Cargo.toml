@@ -15,9 +15,6 @@ hex = { workspace = true }
 mini-alloc = "0.4.2"
 stylus-sdk = "0.4.3"
 
-[lib]
-crate-type = ["lib", "cdylib"]
-
 [features]
 default = ["erc20"]
 export-abi = ["stylus-sdk/export-abi"]
