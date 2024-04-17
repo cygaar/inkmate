@@ -101,17 +101,17 @@ To test the validity of our code (ex. erc20), there is a `mocks` folder which co
 
 To build the binary for your selected feature (ex. erc20), you can run:
 ```bash
-cargo build --target wasm32-unknown-unknown --lib --release --features=erc20,mock
+cargo build --target wasm32-unknown-unknown --lib --release --features=erc20
 ```
 
 Then to run check the validity of the contract you can run:
 ```bash
-cargo stylus check --wasm-file-path target/wasm32-unknown-unknown/release/inkmate.wasm
+cargo stylus check --wasm-file-path target/wasm32-unknown-unknown/release/samples.wasm
 ```
 
 Finally, you can deploy the contract to the Stylus testnet by running:
 ```bash
-cargo stylus deploy -e https://stylus-testnet.arbitrum.io/rpc --private-key=<PRIVATE_KEY> --wasm-file-path target/wasm32-unknown-unknown/release/deps/inkmate.wasm
+cargo stylus deploy -e https://stylus-testnet.arbitrum.io/rpc --private-key=<PRIVATE_KEY> --wasm-file-path target/wasm32-unknown-unknown/release/deps/samples.wasm
 ```
 
 ## Testing
