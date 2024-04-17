@@ -6,7 +6,7 @@ use alloc::string::{String, ToString};
 use core::marker::PhantomData;
 use stylus_sdk::{
     alloy_primitives::{fixed_bytes, Address, B256, U256},
-    alloy_sol_types::{sol, SolType},
+    alloy_sol_types::{eip712_domain, sol, SolType},
     block, contract,
     crypto::keccak,
     evm, msg,
@@ -148,6 +148,11 @@ impl<T: ERC20Params> ERC20<T> {
                 contract::address(),
             )),
         )
+        // eip712_domain!(
+        //     name: T::NAME,
+        //     chain_id: block::chainid(),
+        //     verifying_contract: contract::address(),
+        // ).hash_struct()
     }
 }
 

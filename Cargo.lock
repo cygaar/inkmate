@@ -2750,6 +2750,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "samples"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "hex",
+ "inkmate",
+ "mini-alloc",
+ "stylus-sdk",
+]
+
+[[package]]
 name = "scale-info"
 version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
