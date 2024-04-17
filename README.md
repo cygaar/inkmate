@@ -43,10 +43,10 @@ If you want to only install certain features (ex. erc20), you can run:
 cargo add inkmate --features "erc20"
 ```
 
-Alternatively, you can add the following to your `Cargo.toml` file:
+Alternatively, you can add the following to your `Cargo.toml` file (replace `0.0.5` with your preferred version):
 ```toml
 [dependencies]
-inkmate = { version = "0.0.1", features = ["erc20"] }
+inkmate = { version = "0.0.5", features = ["erc20"] }
 ```
 
 Here's an example contract that uses `inkmate`
