@@ -14,7 +14,6 @@ impl ERC20Params for ERC20MockParams {
     const DECIMALS: u8 = 18;
 }
 
-// The contract
 sol_storage! {
     #[entrypoint] // Makes ERC20Mock the entrypoint
     struct ERC20Mock {

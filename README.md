@@ -66,7 +66,6 @@ impl ERC20Params for ERC20MockParams {
     const DECIMALS: u8 = 18;
 }
 
-// The contract
 sol_storage! {
     #[entrypoint] // Makes ERC20Mock the entrypoint
     struct ERC20Mock {
@@ -92,12 +91,15 @@ impl ERC20Mock {
 
 ## Contributing
 
-This repo is setup as a single Rust workspace with two crates - `common` which contains common utility functions and `contracts` which contains the primary contract logic.
+This repo is setup as a single Rust workspace with several crates:
+- `common` which contains common utility functions
+- `contracts` which contains the primary contract logic
+- `samples` which contains sample implementations of various contracts
 
 The `contracts` crate consists of multiple features to allow for conditional compilation and optional dependencies. This helps reduce binary sizes for Stylus contracts.
 
-Because the `contracts` crate is feature gated, you cannot run `cargo stylus check` as you normally would.
-To test the validity of our code (ex. erc20), there is a `mocks` folder which contains sample implementations used to create a sample binary.
+Because the `contracts` crate is feature gated, you cannot run `cargo stylus check` directly as you normally would.
+To test the validity of our code (ex. erc20), we need to build a specific sample and verify the compiled wasm explicitly.
 
 To build the binary for your selected feature (ex. erc20), you can run:
 ```bash
