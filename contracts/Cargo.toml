@@ -1,6 +1,6 @@
 [package]
-name = "inkmate-contracts"
-version = "0.0.1"
+name = "inkmate"
+version = "0.0.5"
 edition = "2021"
 license = "MIT"
 keywords = ["arbitrum", "ethereum", "stylus", "alloy", "inkmate"]
@@ -12,18 +12,11 @@ inkmate-common = { path = "../common", version = "0.0.1" }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 hex = { workspace = true }
-mini-alloc = "0.4.2"
-stylus-sdk = "0.4.3"
-
-[lib]
-crate-type = ["lib", "cdylib"]
+mini-alloc = { workspace = true }
+stylus-sdk = { workspace = true }
 
 [features]
+default = ["erc20"]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
 erc20 = []
-
-[[example]]
-name = "erc20_abi"
-path = "examples/erc20_abi.rs"
-required-features = ["export-abi", "erc20"]

@@ -1,9 +1,8 @@
-//! This file is used to generate an ABI since there is no executable to generate the abi for in the base library.
-//! To generate the abi, you can run: `cargo run --example erc20_abi --features=export-abi,erc20`
+//! An example ERC20 contract
 extern crate alloc;
 
+use crate::inkmate::tokens::erc20::{ERC20Params, ERC20};
 use alloc::vec::Vec;
-use inkmate::tokens::erc20::{ERC20Params, ERC20};
 use stylus_sdk::{alloy_primitives::U256, msg, prelude::*};
 
 struct ERC20MockParams;
@@ -15,7 +14,6 @@ impl ERC20Params for ERC20MockParams {
     const DECIMALS: u8 = 18;
 }
 
-// The contract
 sol_storage! {
     #[entrypoint] // Makes ERC20Mock the entrypoint
     struct ERC20Mock {

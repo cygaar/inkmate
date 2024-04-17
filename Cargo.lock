@@ -1601,6 +1601,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "inkmate"
+version = "0.0.4"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "hex",
+ "inkmate-common",
+ "mini-alloc",
+ "stylus-sdk",
+]
+
+[[package]]
 name = "inkmate-common"
 version = "0.0.1"
 dependencies = [
@@ -1611,18 +1623,6 @@ dependencies = [
  "k256",
  "mockall",
  "secp256k1",
-]
-
-[[package]]
-name = "inkmate-contracts"
-version = "0.0.1"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "hex",
- "inkmate-common",
- "mini-alloc",
- "stylus-sdk",
 ]
 
 [[package]]
@@ -2747,6 +2747,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "samples"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "hex",
+ "inkmate",
+ "mini-alloc",
+ "stylus-sdk",
 ]
 
 [[package]]
