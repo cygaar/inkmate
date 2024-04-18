@@ -17,7 +17,7 @@ impl ERC20Params for ERC20MockParams {
 sol_storage! {
     #[entrypoint] // Makes ERC20Mock the entrypoint
     struct ERC20Mock {
-        #[borrow] // Allows erc20 to access ERC20Mock's storage
+        #[borrow]
         ERC20<ERC20MockParams> erc20;
     }
 }

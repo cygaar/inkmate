@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-inkmate = { path = "../contracts" }
+inkmate = { path = "../contracts", default-features = false, features = [] }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 hex = { workspace = true }
@@ -15,4 +15,5 @@ stylus-sdk = { workspace = true }
 crate-type = ["lib", "cdylib"]
 
 [features]
-erc20 = []
+erc20 = ["inkmate/erc20"]
+erc721 = ["inkmate/erc721"]
