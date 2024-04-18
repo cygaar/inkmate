@@ -6,7 +6,7 @@ use alloc::{string::String, vec, vec::Vec};
 use core::{borrow::BorrowMut, marker::PhantomData};
 use stylus_sdk::{
     abi::Bytes,
-    alloy_primitives::{b256, Address, U256},
+    alloy_primitives::{Address, U256},
     alloy_sol_types::sol,
     evm, msg,
     prelude::*,
@@ -131,11 +131,7 @@ impl<T: ERC721Params> ERC721<T> {
         to: Address,
         data: Vec<u8>,
     ) -> Result<(), ERC721Error> {
-        // TODO: wait for Stylus SDK to fix the has_code property checker
-        let hash = to.codehash();
-        if !hash.is_zero()
-            || hash == b256!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
-        {
+        if to.has_code() {
             let receiver = IERC721TokenReceiver::new(to);
             let received = receiver
                 .on_erc_721_received(storage, msg::sender(), from, token_id, data)
