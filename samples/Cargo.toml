@@ -17,3 +17,10 @@ crate-type = ["lib", "cdylib"]
 [features]
 erc20 = ["inkmate/erc20"]
 erc721 = ["inkmate/erc721"]
+
+[profile.release]
+codegen-units = 1
+strip = true
+lto = true
+panic = "abort"
+opt-level = "z"
