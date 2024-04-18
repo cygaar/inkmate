@@ -7,7 +7,7 @@ use core::{borrow::BorrowMut, marker::PhantomData};
 use stylus_sdk::{
     abi::Bytes,
     alloy_primitives::{b256, Address, U256},
-    alloy_sol_types::{sol, SolType},
+    alloy_sol_types::sol,
     evm, msg,
     prelude::*,
 };
@@ -54,7 +54,6 @@ pub enum ERC721Error {
     NotApproved(NotApproved),
     TransferToZero(TransferToZero),
     ReceiverRefused(ReceiverRefused),
-    ExternalCall(stylus_sdk::call::Error),
 }
 
 // These methods aren't external, but are helpers used by external methods.
