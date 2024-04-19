@@ -1,5 +1,5 @@
 //! ERC721 base contract.
-//! The logic was based off of: https://github.com/OffchainLabs/stylus-workshop-nft/blob/main/src/erc712.rs
+//! The logic was based off of: https://github.com/cygaar/ERC721Stylus/blob/main/src/erc721.rs
 //! Doc comments are forked from: https://github.com/Vectorized/solady/blob/main/src/tokens/ERC721.sol
 
 use alloc::{string::String, vec, vec::Vec};
