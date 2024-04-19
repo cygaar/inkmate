@@ -2,7 +2,6 @@
 extern crate alloc;
 
 use crate::inkmate::tokens::erc20::{ERC20Params, ERC20};
-use alloc::vec::Vec;
 use stylus_sdk::{alloy_primitives::U256, msg, prelude::*};
 
 struct ERC20MockParams;
@@ -17,7 +16,7 @@ impl ERC20Params for ERC20MockParams {
 sol_storage! {
     #[entrypoint] // Makes ERC20Mock the entrypoint
     struct ERC20Mock {
-        #[borrow] // Allows erc20 to access ERC20Mock's storage
+        #[borrow]
         ERC20<ERC20MockParams> erc20;
     }
 }

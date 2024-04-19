@@ -16,7 +16,8 @@ mini-alloc = { workspace = true }
 stylus-sdk = { workspace = true }
 
 [features]
-default = ["erc20"]
+default = ["erc20", "erc721"]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
 erc20 = []
+erc721 = []
