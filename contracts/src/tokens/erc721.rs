@@ -21,9 +21,13 @@ pub trait ERC721Params {
 sol_storage! {
     /// ERC721 implements all ERC-721 methods
     pub struct ERC721<T: ERC721Params> {
+        /// Maps token_id to owner
         mapping(uint256 => address) owners;
+        /// Maps token_id to the approved spender
         mapping(uint256 => address) approved;
+        /// Maps owner to their NFT balance
         mapping(address => uint256) balance;
+        /// Maps the approved spenders for a given address
         mapping(address => mapping(address => bool)) approved_for_all;
         PhantomData<T> phantom;
     }
@@ -38,11 +42,17 @@ sol! {
     /// Emitted when `owner` enables or disables `operator` to manage all of their tokens.
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
+    /// Token already minted.
     error AlreadyMinted();
+    /// Invalid token id.
     error InvalidTokenId(uint256 token_id);
+    /// Not the owner of the token.
     error NotOwner(address from, uint256 token_id, address real_owner);
+    /// Not approved to transfer the token.
     error NotApproved(uint256 token_id, address owner, address spender);
+    /// Transfer to the zero address no allowed.
     error TransferToZero(uint256 token_id);
+    /// Safe transfer callback failed.
     error ReceiverRefused(address receiver, uint256 token_id);
 }
 
@@ -56,8 +66,6 @@ pub enum ERC721Error {
     ReceiverRefused(ReceiverRefused),
 }
 
-// These methods aren't external, but are helpers used by external methods.
-// Methods marked as "pub" here are usable outside of the erc721 module (i.e. they're callable from main.rs).
 impl<T: ERC721Params> ERC721<T> {
     /// Requires that msg::sender() is authorized to spend a given token
     fn require_authorized_to_spend(
@@ -90,10 +98,8 @@ impl<T: ERC721Params> ERC721<T> {
         }))
     }
 
-    /// Transfers `token_id` from `from` to `to`.
-    /// This function does check that `from` is the owner of the token, but it does not check
-    /// that `to` is not the zero address, as this function is usable for burning.
-    pub fn transfer(
+    /// Internal transfer function
+    pub fn _transfer(
         &mut self,
         token_id: U256,
         from: Address,
@@ -153,6 +159,18 @@ impl<T: ERC721Params> ERC721<T> {
         Ok(())
     }
 
+    /// Transfers token `id` from `from` to `to`.
+    ///
+    /// Requirements:
+    ///
+    /// - Token `id` must exist.
+    /// - `from` must be the owner of the token.
+    /// - `to` cannot be the zero address.
+    /// - The caller must be the owner of the token, or be approved to manage the token.
+    /// - If `to` refers to a smart contract, it must implement
+    ///   {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+    ///
+    /// Emits a {Transfer} event.
     pub fn safe_transfer<S: TopLevelStorage + BorrowMut<Self>>(
         storage: &mut S,
         token_id: U256,
@@ -164,6 +182,14 @@ impl<T: ERC721Params> ERC721<T> {
         Self::call_receiver(storage, token_id, from, to, data)
     }
 
+    /// Mints token `id` to `to`.
+    ///
+    /// Requirements:
+    ///
+    /// - Token `id` must not exist.
+    /// - `to` cannot be the zero address.
+    ///
+    /// Emits a {Transfer} event.
     pub fn mint(&mut self, to: Address, token_id: U256) -> Result<(), ERC721Error> {
         if to.is_zero() {
             return Err(ERC721Error::TransferToZero(TransferToZero { token_id }));
@@ -186,6 +212,16 @@ impl<T: ERC721Params> ERC721<T> {
         Ok(())
     }
 
+    /// Mints token `id` to `to`.
+    ///
+    /// Requirements:
+    ///
+    /// - Token `id` must not exist.
+    /// - `to` cannot be the zero address.
+    /// - If `to` refers to a smart contract, it must implement
+    ///   {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+    ///
+    /// Emits a {Transfer} event.
     pub fn safe_mint<S: TopLevelStorage + BorrowMut<Self>>(
         storage: &mut S,
         to: Address,
@@ -197,6 +233,15 @@ impl<T: ERC721Params> ERC721<T> {
         Ok(())
     }
 
+    /// Destroys token `id`, using `by`.
+    ///
+    /// Requirements:
+    ///
+    /// - Token `id` must exist.
+    /// - If `by` is not the zero address,
+    ///   it must be the owner of the token, or be approved to manage the token.
+    ///
+    /// Emits a {Transfer} event.
     pub fn burn(&mut self, token_id: U256) -> Result<(), ERC721Error> {
         let mut owner_setter = self.owners.setter(token_id);
         if owner_setter.is_zero() {
@@ -244,24 +289,25 @@ const ERC721_TOKEN_RECEIVER_ID: u32 = 0x150b7a02;
 // these methods are external to other contracts
 #[external]
 impl<T: ERC721Params> ERC721<T> {
-    /// Immutable NFT name.
+    /// Returns the token collection name.
     pub fn name() -> String {
         T::NAME.into()
     }
 
-    /// Immutable NFT symbol.
+    /// Returns the token collection symbol.
     pub fn symbol() -> String {
         T::SYMBOL.into()
     }
 
-    /// The NFT's Uniform Resource Identifier.
+    /// Returns the Uniform Resource Identifier (URI) for token `id`.
     #[selector(name = "tokenURI")]
     pub fn token_uri(&self, token_id: U256) -> Result<String, ERC721Error> {
         self.owner_of(token_id)?; // require NFT exist
         Ok(T::token_uri(token_id))
     }
 
-    /// Wether the NFT supports a given standard.
+    /// Returns true if this contract implements the interface defined by `interfaceId`.
+    /// See: https://eips.ethereum.org/EIPS/eip-165
     pub fn supports_interface(interface: [u8; 4]) -> bool {
         if interface == [0xff; 4] {
             // special cased in the ERC165 standard
@@ -278,12 +324,18 @@ impl<T: ERC721Params> ERC721<T> {
         )
     }
 
-    /// Gets the number of NFTs owned by an account.
+    /// Returns the number of tokens owned by `owner`.
+    ///
+    /// Requirements:
+    /// - `owner` must not be the zero address.
     pub fn balance_of(&self, owner: Address) -> U256 {
         U256::from(self.balance.get(owner))
     }
 
-    /// Gets the owner of the NFT, if it exists.
+    /// Returns the owner of token `id`.
+    ///
+    /// Requirements:
+    /// - Token `id` must exist.
     pub fn owner_of(&self, token_id: U256) -> Result<Address, ERC721Error> {
         let owner = self.owners.get(token_id);
         if owner.is_zero() {
@@ -292,7 +344,18 @@ impl<T: ERC721Params> ERC721<T> {
         Ok(owner)
     }
 
-    /// Transfers an NFT, but only after checking the `to` address can receive the NFT.
+    /// Transfers token `id` from `from` to `to`.
+    ///
+    /// Requirements:
+    ///
+    /// - Token `id` must exist.
+    /// - `from` must be the owner of the token.
+    /// - `to` cannot be the zero address.
+    /// - The caller must be the owner of the token, or be approved to manage the token.
+    /// - If `to` refers to a smart contract, it must implement
+    ///   {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
+    ///
+    /// Emits a {Transfer} event.
     pub fn safe_transfer_from<S: TopLevelStorage + BorrowMut<Self>>(
         storage: &mut S,
         from: Address,
@@ -324,7 +387,16 @@ impl<T: ERC721Params> ERC721<T> {
         Self::safe_transfer(storage, token_id, from, to, data.0)
     }
 
-    /// Transfers the NFT.
+    /// Transfers token `id` from `from` to `to`.
+    ///
+    /// Requirements:
+    ///
+    /// - Token `id` must exist.
+    /// - `from` must be the owner of the token.
+    /// - `to` cannot be the zero address.
+    /// - The caller must be the owner of the token, or be approved to manage the token.
+    ///
+    /// Emits a {Transfer} event.
     pub fn transfer_from(
         &mut self,
         from: Address,
@@ -335,11 +407,18 @@ impl<T: ERC721Params> ERC721<T> {
             return Err(ERC721Error::TransferToZero(TransferToZero { token_id }));
         }
         self.require_authorized_to_spend(from, token_id)?;
-        self.transfer(token_id, from, to)?;
+        self._transfer(token_id, from, to)?;
         Ok(())
     }
 
-    /// Grants an account the ability to manage the sender's NFT.
+    /// Sets `account` as the approved account to manage token `id`.
+    ///
+    /// Requirements:
+    /// - Token `id` must exist.
+    /// - The caller must be the owner of the token,
+    ///   or an approved operator for the token owner.
+    ///
+    /// Emits an {Approval} event.
     pub fn approve(&mut self, approved: Address, token_id: U256) -> Result<(), ERC721Error> {
         let owner = self.owner_of(token_id)?;
 
@@ -361,7 +440,9 @@ impl<T: ERC721Params> ERC721<T> {
         Ok(())
     }
 
-    /// Grants an account the ability to manage all of the sender's NFTs.
+    /// Sets whether `operator` is approved to manage the tokens of the caller.
+    ///
+    /// Emits an {ApprovalForAll} event.
     pub fn set_approval_for_all(&mut self, operator: Address, approved: bool) {
         let owner = msg::sender();
         self.approved_for_all
@@ -375,12 +456,13 @@ impl<T: ERC721Params> ERC721<T> {
         });
     }
 
-    /// Gets the account managing an NFT, or zero if unmanaged.
+    /// Returns the account approved to manage token `id`.
+    /// Returns the zero address instead of reverting if the token does not exist.
     pub fn get_approved(&mut self, token_id: U256) -> Address {
         self.approved.get(token_id)
     }
 
-    /// Determines if an account has been authorized to managing all of a user's NFTs.
+    /// Returns whether `operator` is approved to manage the tokens of `owner`.
     pub fn is_approved_for_all(&mut self, owner: Address, operator: Address) -> bool {
         self.approved_for_all.getter(owner).get(operator)
     }
