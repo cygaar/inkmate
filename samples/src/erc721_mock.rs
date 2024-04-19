@@ -2,7 +2,7 @@
 extern crate alloc;
 
 use crate::inkmate::tokens::erc721::{ERC721Params, ERC721};
-use alloc::{format, string::String, vec::Vec};
+use alloc::format;
 use stylus_sdk::{alloy_primitives::U256, msg, prelude::*};
 
 pub struct ERC721MockParams;
@@ -42,14 +42,14 @@ impl ERC721Mock {
         let qty: u32 = qty.try_into().unwrap();
 
         for i in 0..qty.try_into().unwrap() {
-            self.erc721.mint(msg::sender(), U256::from(supply + i))?;
+            self.erc721._mint(msg::sender(), U256::from(supply + i))?;
         }
         self.total_supply.set(U256::from(supply + qty));
         Ok(())
     }
 
     pub fn burn(&mut self, token_id: U256) -> Result<(), Vec<u8>> {
-        self.erc721.burn(token_id)?;
+        self.erc721._burn(token_id)?;
         let supply = self.total_supply.get();
         self.total_supply.set(supply - U256::from(1));
         Ok(())

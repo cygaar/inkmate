@@ -15,15 +15,15 @@ use stylus_sdk::{
 pub trait ERC721Params {
     const NAME: &'static str;
     const SYMBOL: &'static str;
-    fn token_uri(token_id: U256) -> String;
+    fn token_uri(id: U256) -> String;
 }
 
 sol_storage! {
     /// ERC721 implements all ERC-721 methods
     pub struct ERC721<T: ERC721Params> {
-        /// Maps token_id to owner
+        /// Maps id to owner
         mapping(uint256 => address) owners;
-        /// Maps token_id to the approved spender
+        /// Maps id to the approved spender
         mapping(uint256 => address) approved;
         /// Maps owner to their NFT balance
         mapping(address => uint256) balance;
@@ -36,24 +36,24 @@ sol_storage! {
 // Declare events and Solidity error types
 sol! {
     /// Emitted when token `id` is transferred from `from` to `to`.
-    event Transfer(address indexed from, address indexed to, uint256 indexed token_id);
+    event Transfer(address indexed from, address indexed to, uint256 indexed id);
     /// Emitted when `owner` enables `account` to manage the `id` token.
-    event Approval(address indexed owner, address indexed approved, uint256 indexed token_id);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed id);
     /// Emitted when `owner` enables or disables `operator` to manage all of their tokens.
     event ApprovalForAll(address indexed owner, address indexed operator, bool approved);
 
     /// Token already minted.
     error AlreadyMinted();
     /// Invalid token id.
-    error InvalidTokenId(uint256 token_id);
+    error InvalidTokenId(uint256 id);
     /// Not the owner of the token.
-    error NotOwner(address from, uint256 token_id, address real_owner);
+    error NotOwner(address from, uint256 id, address real_owner);
     /// Not approved to transfer the token.
-    error NotApproved(uint256 token_id, address owner, address spender);
+    error NotApproved(uint256 id, address owner, address spender);
     /// Transfer to the zero address no allowed.
-    error TransferToZero(uint256 token_id);
+    error TransferToZero(uint256 id);
     /// Safe transfer callback failed.
-    error ReceiverRefused(address receiver, uint256 token_id);
+    error ReceiverRefused(address receiver, uint256 id);
 }
 
 #[derive(SolidityError)]
@@ -68,16 +68,12 @@ pub enum ERC721Error {
 
 impl<T: ERC721Params> ERC721<T> {
     /// Requires that msg::sender() is authorized to spend a given token
-    fn require_authorized_to_spend(
-        &self,
-        from: Address,
-        token_id: U256,
-    ) -> Result<(), ERC721Error> {
-        let owner = self.owner_of(token_id)?;
+    fn _require_authorized_to_spend(&self, from: Address, id: U256) -> Result<(), ERC721Error> {
+        let owner = self.owner_of(id)?;
         if from != owner {
             return Err(ERC721Error::NotOwner(NotOwner {
                 from,
-                token_id,
+                id,
                 real_owner: owner,
             }));
         }
@@ -88,29 +84,24 @@ impl<T: ERC721Params> ERC721<T> {
         if self.approved_for_all.getter(owner).get(msg::sender()) {
             return Ok(());
         }
-        if msg::sender() == self.approved.get(token_id) {
+        if msg::sender() == self.approved.get(id) {
             return Ok(());
         }
         Err(ERC721Error::NotApproved(NotApproved {
             owner,
             spender: msg::sender(),
-            token_id,
+            id,
         }))
     }
 
     /// Internal transfer function
-    pub fn _transfer(
-        &mut self,
-        token_id: U256,
-        from: Address,
-        to: Address,
-    ) -> Result<(), ERC721Error> {
-        let mut owner = self.owners.setter(token_id);
+    pub fn _transfer(&mut self, id: U256, from: Address, to: Address) -> Result<(), ERC721Error> {
+        let mut owner = self.owners.setter(id);
         let previous_owner = owner.get();
         if previous_owner != from {
             return Err(ERC721Error::NotOwner(NotOwner {
                 from,
-                token_id,
+                id,
                 real_owner: previous_owner,
             }));
         }
@@ -125,14 +116,16 @@ impl<T: ERC721Params> ERC721<T> {
         let balance = to_balance.get() + U256::from(1);
         to_balance.set(balance);
 
-        self.approved.delete(token_id);
-        evm::log(Transfer { from, to, token_id });
+        self.approved.delete(id);
+        evm::log(Transfer { from, to, id });
         Ok(())
     }
 
-    fn call_receiver<S: TopLevelStorage>(
+    /// Calls the onERC721Received callback function if the receiver is not an EOA (code size > 0).
+    /// Throws an error if the receiver cannot be called or the returned value is not ERC721_RECEIVED_SELECTOR.
+    fn _call_receiver<S: TopLevelStorage>(
         storage: &mut S,
-        token_id: U256,
+        id: U256,
         from: Address,
         to: Address,
         data: Vec<u8>,
@@ -140,19 +133,19 @@ impl<T: ERC721Params> ERC721<T> {
         if to.has_code() {
             let receiver = IERC721TokenReceiver::new(to);
             let received = receiver
-                .on_erc_721_received(storage, msg::sender(), from, token_id, data)
+                .on_erc_721_received(storage, msg::sender(), from, id, data)
                 .map_err(|_| {
                     ERC721Error::ReceiverRefused(ReceiverRefused {
                         receiver: receiver.address,
-                        token_id,
+                        id,
                     })
                 })?
                 .0;
 
-            if u32::from_be_bytes(received) != ERC721_TOKEN_RECEIVER_ID {
+            if u32::from_be_bytes(received) != ERC721_RECEIVED_SELECTOR {
                 return Err(ERC721Error::ReceiverRefused(ReceiverRefused {
                     receiver: receiver.address,
-                    token_id,
+                    id,
                 }));
             }
         }
@@ -171,15 +164,15 @@ impl<T: ERC721Params> ERC721<T> {
     ///   {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
     ///
     /// Emits a {Transfer} event.
-    pub fn safe_transfer<S: TopLevelStorage + BorrowMut<Self>>(
+    pub fn _safe_transfer<S: TopLevelStorage + BorrowMut<Self>>(
         storage: &mut S,
-        token_id: U256,
+        id: U256,
         from: Address,
         to: Address,
         data: Vec<u8>,
     ) -> Result<(), ERC721Error> {
-        storage.borrow_mut().transfer_from(from, to, token_id)?;
-        Self::call_receiver(storage, token_id, from, to, data)
+        storage.borrow_mut().transfer_from(from, to, id)?;
+        Self::_call_receiver(storage, id, from, to, data)
     }
 
     /// Mints token `id` to `to`.
@@ -190,11 +183,11 @@ impl<T: ERC721Params> ERC721<T> {
     /// - `to` cannot be the zero address.
     ///
     /// Emits a {Transfer} event.
-    pub fn mint(&mut self, to: Address, token_id: U256) -> Result<(), ERC721Error> {
+    pub fn _mint(&mut self, to: Address, id: U256) -> Result<(), ERC721Error> {
         if to.is_zero() {
-            return Err(ERC721Error::TransferToZero(TransferToZero { token_id }));
+            return Err(ERC721Error::TransferToZero(TransferToZero { id }));
         }
-        let mut owner = self.owners.setter(token_id);
+        let mut owner = self.owners.setter(id);
         if !owner.is_zero() {
             return Err(ERC721Error::AlreadyMinted(AlreadyMinted {}));
         }
@@ -207,7 +200,7 @@ impl<T: ERC721Params> ERC721<T> {
         evm::log(Transfer {
             from: Address::default(),
             to,
-            token_id,
+            id,
         });
         Ok(())
     }
@@ -222,14 +215,14 @@ impl<T: ERC721Params> ERC721<T> {
     ///   {IERC721Receiver-onERC721Received}, which is called upon a safe transfer.
     ///
     /// Emits a {Transfer} event.
-    pub fn safe_mint<S: TopLevelStorage + BorrowMut<Self>>(
+    pub fn _safe_mint<S: TopLevelStorage + BorrowMut<Self>>(
         storage: &mut S,
         to: Address,
-        token_id: U256,
+        id: U256,
         data: Vec<u8>,
     ) -> Result<(), ERC721Error> {
-        storage.borrow_mut().mint(to, token_id)?;
-        Self::call_receiver(storage, token_id, Address::default(), to, data)?;
+        storage.borrow_mut()._mint(to, id)?;
+        Self::_call_receiver(storage, id, Address::default(), to, data)?;
         Ok(())
     }
 
@@ -242,21 +235,21 @@ impl<T: ERC721Params> ERC721<T> {
     ///   it must be the owner of the token, or be approved to manage the token.
     ///
     /// Emits a {Transfer} event.
-    pub fn burn(&mut self, token_id: U256) -> Result<(), ERC721Error> {
-        let mut owner_setter = self.owners.setter(token_id);
+    pub fn _burn(&mut self, id: U256) -> Result<(), ERC721Error> {
+        let mut owner_setter = self.owners.setter(id);
         if owner_setter.is_zero() {
-            return Err(ERC721Error::InvalidTokenId(InvalidTokenId { token_id }));
+            return Err(ERC721Error::InvalidTokenId(InvalidTokenId { id }));
         }
         let owner = owner_setter.get();
 
         if msg::sender() != owner
             && !self.approved_for_all.getter(owner).get(msg::sender())
-            && msg::sender() != self.approved.get(token_id)
+            && msg::sender() != self.approved.get(id)
         {
             return Err(ERC721Error::NotApproved(NotApproved {
                 owner,
                 spender: msg::sender(),
-                token_id,
+                id,
             }));
         }
 
@@ -265,12 +258,12 @@ impl<T: ERC721Params> ERC721<T> {
         owner_balance.set(balance);
 
         owner_setter.set(Address::default());
-        self.approved.delete(token_id);
+        self.approved.delete(id);
 
         evm::log(Transfer {
             from: owner,
             to: Address::default(),
-            token_id,
+            id,
         });
         Ok(())
     }
@@ -279,14 +272,13 @@ impl<T: ERC721Params> ERC721<T> {
 sol_interface! {
     /// Allows calls to the `onERC721Received` method of other contracts implementing `IERC721TokenReceiver`.
     interface IERC721TokenReceiver {
-        function onERC721Received(address operator, address from, uint256 token_id, bytes data) external returns(bytes4);
+        function onERC721Received(address operator, address from, uint256 id, bytes data) external returns(bytes4);
     }
 }
 
 /// Selector for `onERC721Received`, which is returned by contracts implementing `IERC721TokenReceiver`.
-const ERC721_TOKEN_RECEIVER_ID: u32 = 0x150b7a02;
+const ERC721_RECEIVED_SELECTOR: u32 = 0x150b7a02;
 
-// these methods are external to other contracts
 #[external]
 impl<T: ERC721Params> ERC721<T> {
     /// Returns the token collection name.
@@ -301,9 +293,9 @@ impl<T: ERC721Params> ERC721<T> {
 
     /// Returns the Uniform Resource Identifier (URI) for token `id`.
     #[selector(name = "tokenURI")]
-    pub fn token_uri(&self, token_id: U256) -> Result<String, ERC721Error> {
-        self.owner_of(token_id)?; // require NFT exist
-        Ok(T::token_uri(token_id))
+    pub fn token_uri(&self, id: U256) -> Result<String, ERC721Error> {
+        self.owner_of(id)?; // require NFT exist
+        Ok(T::token_uri(id))
     }
 
     /// Returns true if this contract implements the interface defined by `interfaceId`.
@@ -336,10 +328,10 @@ impl<T: ERC721Params> ERC721<T> {
     ///
     /// Requirements:
     /// - Token `id` must exist.
-    pub fn owner_of(&self, token_id: U256) -> Result<Address, ERC721Error> {
-        let owner = self.owners.get(token_id);
+    pub fn owner_of(&self, id: U256) -> Result<Address, ERC721Error> {
+        let owner = self.owners.get(id);
         if owner.is_zero() {
-            return Err(ERC721Error::InvalidTokenId(InvalidTokenId { token_id }));
+            return Err(ERC721Error::InvalidTokenId(InvalidTokenId { id }));
         }
         Ok(owner)
     }
@@ -360,9 +352,9 @@ impl<T: ERC721Params> ERC721<T> {
         storage: &mut S,
         from: Address,
         to: Address,
-        token_id: U256,
+        id: U256,
     ) -> Result<(), ERC721Error> {
-        Self::safe_transfer_from_with_data(storage, from, to, token_id, Bytes(vec![]))
+        Self::safe_transfer_from_with_data(storage, from, to, id, Bytes(vec![]))
     }
 
     /// Equivalent to [`safe_transfer_from`], but with additional data for the receiver.
@@ -374,17 +366,17 @@ impl<T: ERC721Params> ERC721<T> {
         storage: &mut S,
         from: Address,
         to: Address,
-        token_id: U256,
+        id: U256,
         data: Bytes,
     ) -> Result<(), ERC721Error> {
         if to.is_zero() {
-            return Err(ERC721Error::TransferToZero(TransferToZero { token_id }));
+            return Err(ERC721Error::TransferToZero(TransferToZero { id }));
         }
         storage
             .borrow_mut()
-            .require_authorized_to_spend(from, token_id)?;
+            ._require_authorized_to_spend(from, id)?;
 
-        Self::safe_transfer(storage, token_id, from, to, data.0)
+        Self::_safe_transfer(storage, id, from, to, data.0)
     }
 
     /// Transfers token `id` from `from` to `to`.
@@ -401,13 +393,13 @@ impl<T: ERC721Params> ERC721<T> {
         &mut self,
         from: Address,
         to: Address,
-        token_id: U256,
+        id: U256,
     ) -> Result<(), ERC721Error> {
         if to.is_zero() {
-            return Err(ERC721Error::TransferToZero(TransferToZero { token_id }));
+            return Err(ERC721Error::TransferToZero(TransferToZero { id }));
         }
-        self.require_authorized_to_spend(from, token_id)?;
-        self._transfer(token_id, from, to)?;
+        self._require_authorized_to_spend(from, id)?;
+        self._transfer(id, from, to)?;
         Ok(())
     }
 
@@ -419,23 +411,23 @@ impl<T: ERC721Params> ERC721<T> {
     ///   or an approved operator for the token owner.
     ///
     /// Emits an {Approval} event.
-    pub fn approve(&mut self, approved: Address, token_id: U256) -> Result<(), ERC721Error> {
-        let owner = self.owner_of(token_id)?;
+    pub fn approve(&mut self, approved: Address, id: U256) -> Result<(), ERC721Error> {
+        let owner = self.owner_of(id)?;
 
         // require authorization
         if msg::sender() != owner && !self.approved_for_all.getter(owner).get(msg::sender()) {
             return Err(ERC721Error::NotApproved(NotApproved {
                 owner,
                 spender: msg::sender(),
-                token_id,
+                id,
             }));
         }
-        self.approved.insert(token_id, approved);
+        self.approved.insert(id, approved);
 
         evm::log(Approval {
             approved,
             owner,
-            token_id,
+            id,
         });
         Ok(())
     }
@@ -458,8 +450,8 @@ impl<T: ERC721Params> ERC721<T> {
 
     /// Returns the account approved to manage token `id`.
     /// Returns the zero address instead of reverting if the token does not exist.
-    pub fn get_approved(&mut self, token_id: U256) -> Address {
-        self.approved.get(token_id)
+    pub fn get_approved(&mut self, id: U256) -> Address {
+        self.approved.get(id)
     }
 
     /// Returns whether `operator` is approved to manage the tokens of `owner`.
