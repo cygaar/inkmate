@@ -18,7 +18,7 @@ We **do not give any warranties** and **will not be liable for any loss** incurr
 ```ml
 tokens
 ├─ ERC20 — "Minimalist and gas efficient ERC20 + EIP-2612 implementation"
-├─ ERC721 (coming soon) — "Minimalist and gas efficient ERC721 implementation"
+├─ ERC721 — "Minimalist and gas efficient ERC721 implementation"
 ├─ ERC721A (coming soon) — "Gas efficient ERC721 implementation with cheap minting costs"
 utils
 ├─ ECRECOVER — "Library for calling ecrecover in Rust smart contracts"
