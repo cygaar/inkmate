@@ -103,7 +103,7 @@ To test the validity of our code (ex. erc20), we need to build a specific sample
 
 To build the binary for your selected feature (ex. erc20), you can run:
 ```bash
-cargo build --target wasm32-unknown-unknown --lib --release --features=erc20
+cargo +nightly build --target wasm32-unknown-unknown --lib --release --features=erc20 -p samples -Z build-std=std,panic_abort -Z build-std-features=panic_immediate_abort
 ```
 
 Then to run check the validity of the contract you can run:
