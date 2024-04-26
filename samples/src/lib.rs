@@ -8,3 +8,6 @@ mod erc20_mock;
 
 #[cfg(feature = "erc721")]
 mod erc721_mock;
+
+#[cfg(feature = "erc721a")]
+mod erc721a_mock;
