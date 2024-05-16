@@ -231,7 +231,9 @@ impl<T: ERC20Params> ERC20<T> {
                 want: amount,
             }));
         }
-        allowance.set(old_allowance - amount);
+        if old_allowance != U256::MAX {
+            allowance.set(old_allowance - amount);
+        }
         self._transfer(from, to, amount)?;
         Ok(true)
     }
