@@ -13,7 +13,7 @@ static ALLOC: mini_alloc::MiniAlloc = mini_alloc::MiniAlloc::INIT;
 extern crate inkmate_common;
 
 // Conditional compilation of the ERC20 token module
-#[cfg(any(feature = "erc20", feature = "erc721"))]
+#[cfg(any(feature = "erc20", feature = "erc721", feature = "erc721a"))]
 pub mod tokens;
 
 // Utility functions and helpers used across the library

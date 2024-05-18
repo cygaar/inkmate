@@ -17,6 +17,7 @@ crate-type = ["lib", "cdylib"]
 [features]
 erc20 = ["inkmate/erc20"]
 erc721 = ["inkmate/erc721"]
+erc721a = ["inkmate/erc721a"]
 
 [profile.release]
 codegen-units = 1
