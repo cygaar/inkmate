@@ -17,4 +17,5 @@ extern crate inkmate_common;
 pub mod tokens;
 
 // Utility functions and helpers used across the library
-mod utils;
+#[cfg(any(feature = "erc20", feature = "ecrecover"))]
+pub mod utils;
