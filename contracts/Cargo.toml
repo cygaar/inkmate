@@ -19,5 +19,8 @@ stylus-sdk = { workspace = true }
 default = ["erc20", "erc721"]
 export-abi = ["stylus-sdk/export-abi"]
 debug = ["stylus-sdk/debug"]
+# Tokens features
 erc20 = []
 erc721 = []
+# Utils features
+ecrecover = []

@@ -1,10 +1,14 @@
 //! Calls the ecrecover EVM precompile through a static call and returns the recovered address
 
 use crate::inkmate_common::crypto::ecrecover::{
-    EcRecoverTrait, EcdsaError, EC_RECOVER_ADDRESS_LAST_BYTE, EC_RECOVER_INPUT_LEN,
-    NUM_BYTES_ADDRESS, NUM_BYTES_U256,
+    EcdsaError, EC_RECOVER_ADDRESS_LAST_BYTE, EC_RECOVER_INPUT_LEN, NUM_BYTES_ADDRESS,
+    NUM_BYTES_U256,
 };
 use stylus_sdk::{alloy_primitives::Address, call::RawCall};
+
+/// Import EcRecoverTrait from inkmate_common publicly
+/// This permit projects to use it without importing `inkmate_common`
+pub use crate::inkmate_common::crypto::ecrecover::EcRecoverTrait;
 
 pub struct PrecompileEcRecover;
 
